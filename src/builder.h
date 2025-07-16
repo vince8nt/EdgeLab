@@ -3,6 +3,7 @@
 
 #include "util.h"
 #include "graph.cpp"
+#include "debug.h"
 
 template<typename Adjacency_t, typename VertexStats_t>
 class Builder {
@@ -11,10 +12,12 @@ private:
 
     // build AdjacencyMatrix from EdgeList
     AdjacencyMatrix<Adjacency_t> EdgeListToMatrix(EdgeList<Adjacency_t> &edge_list) {
-        AdjacencyMatrix<Adjacency_t> adjacency_matrix();
+        AdjacencyMatrix<Adjacency_t> adjacency_matrix;
         for (auto &edge : edge_list) {
-            while (edge.source_ >= adjacency_matrix.size())
+            const vertex_ID_t max_vertex_id = std::max(edge.source_, edge.adjacency_.dest_);
+            while (max_vertex_id >= adjacency_matrix.size()) {
                 adjacency_matrix.push_back(AdjacencyList<Adjacency_t>());
+            }
             adjacency_matrix[edge.source_].push_back(edge.adjacency_);
             if (graph_type_ == GraphType::UNDIRECTED) {
                 Adjacency_t reverse_edge = edge.adjacency_;
@@ -52,7 +55,7 @@ private:
 
         edge_ID_t edges_index = 0;
         for (vertex_ID_t vertices_index = 0; vertices_index < adjacency_matrix.size(); vertices_index++) {
-            vertices[vertices_index] = {edges_index, adjacency_matrix[vertices_index].size()};
+            new (&vertices[vertices_index]) Vertex(edges + edges_index, adjacency_matrix[vertices_index].size());
             for (int i = 0; i < adjacency_matrix[vertices_index].size(); i++)
                 edges[edges_index++] = adjacency_matrix[vertices_index][i];
         }
@@ -69,7 +72,7 @@ private:
 
         edge_ID_t edges_index = 0;
         for (vertex_ID_t vertices_index = 0; vertices_index < adjacency_matrix.size(); vertices_index++) {
-            vertices[vertices_index] = Vertex(vertex_stats[vertices_index], edges_index, adjacency_matrix[vertices_index].size());
+            new (&vertices[vertices_index]) Vertex(vertex_stats[vertices_index], edges + edges_index, adjacency_matrix[vertices_index].size());
             for (int i = 0; i < adjacency_matrix[vertices_index].size(); i++)
                 edges[edges_index++] = adjacency_matrix[vertices_index][i];
         }

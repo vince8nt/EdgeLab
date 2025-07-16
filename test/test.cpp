@@ -12,6 +12,10 @@ public:
         EdgeList<Adjacency_t> edge_list = generator.Generate();
         D_.print_edge_list(edge_list);
 
+        Builder<Adjacency_t, VertexStats_t> builder(graph_type);
+        Graph<Adjacency_t, VertexStats_t> graph = builder.BuildCSR(edge_list);
+        D_.print_graph(graph);
+        D_.print_graph_it(graph);
     }
 
 

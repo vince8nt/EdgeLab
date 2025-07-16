@@ -37,14 +37,14 @@ enum class EdgeType {
 
 // Adjacency containing only destination ID (used for CSR)
 struct Adjacency {
-    const vertex_ID_t dest_;    
+    vertex_ID_t dest_;    
 };
 struct AdjacencyW : public Adjacency {
-    const weight_t weight_;
+   weight_t weight_;
 };
 template<typename Adjacency_t> // unique ID for each edge 
 struct AdjacencyID : public Adjacency_t { // usually not useful since we can just use (sourceID, destID)
-    const edge_ID_t ID_;
+    edge_ID_t ID_;
 };
 
 // Adjacency list/matrix (used when making CSR)

@@ -9,6 +9,7 @@ template<typename Adjacency_t, typename VertexStats_t>
 class Debug {
 public:
     void print_edge_list(EdgeList<Adjacency_t> &edge_list) {
+        std::cout << "Edge List:" << std::endl;
         for (auto &edge : edge_list) {
             std::cout << edge.source_ << " " << edge.adjacency_.dest_ << std::endl;
         }
@@ -22,6 +23,7 @@ public:
     }
 
     void print_adjacency_matrix(AdjacencyMatrix<Adjacency_t> &adjacency_matrix) {
+        std::cout << "Adjacency Matrix:" << std::endl;
         for (vertex_ID_t i = 0; i < adjacency_matrix.size(); i++) {
             std::cout << i << ": ";
             print_adjacency_list(adjacency_matrix[i]);
@@ -30,6 +32,7 @@ public:
 
     // should have the same output as print_adjacency_matrix
     void print_graph(Graph<Adjacency_t, VertexStats_t> &graph) {
+        std::cout << "Graph (printed with indexing):" << std::endl;
         for (vertex_ID_t v = 0; v < graph.num_vertices(); v++) {
             std::cout << v << ": ";
             auto edges = graph[v].edges();
@@ -42,6 +45,7 @@ public:
 
     // should have the same output as print_adjacency_matrix
     void print_graph_it(Graph<Adjacency_t, VertexStats_t> &graph) {
+        std::cout << "Graph (printed with iterators):" << std::endl;
         vertex_ID_t v_id = 0;
         for (auto &v : graph) { // TODO: find a way to get vertex ID from iterator
             std::cout << v_id << ": ";
