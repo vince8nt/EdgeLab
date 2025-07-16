@@ -1,8 +1,8 @@
 #ifndef BUILDER_H_
 #define BUILDER_H_
 
-#include <util.h>
-#include <graph.h>
+#include "util.h"
+#include "graph.cpp"
 
 template<typename Adjacency_t, typename VertexStats_t>
 class Builder {
@@ -46,7 +46,7 @@ private:
     
     // create CSR without vertex stats
     Graph<Adjacency_t, VertexStats_t> MatrixToCSR(vertex_ID_t num_edges, AdjacencyMatrix<Adjacency_t> &adjacency_matrix) {
-        using Vertex = Graph<Adjacency_t, VertexStats_t>::Vertex;
+        using Vertex = typename Graph<Adjacency_t, VertexStats_t>::Vertex;
         Vertex* vertices = (Vertex*)malloc(adjacency_matrix.size() * sizeof(Vertex));
         Adjacency_t* edges = (Adjacency_t*)malloc(num_edges * sizeof(Adjacency_t));
 
@@ -62,8 +62,8 @@ private:
 
     // create CSR with vertex stats
     Graph<Adjacency_t, VertexStats_t> MatrixToCSR(vertex_ID_t num_edges,
-            AdjacencyMatrix<Adjacency_t> &adjacency_matrix, vector<VertexStats_t> &vertex_stats) {
-        using Vertex = Graph<Adjacency_t, VertexStats_t>::Vertex;
+            AdjacencyMatrix<Adjacency_t> &adjacency_matrix, std::vector<VertexStats_t> &vertex_stats) {
+        using Vertex = typename Graph<Adjacency_t, VertexStats_t>::Vertex;
         Vertex* vertices = (Vertex*)malloc(adjacency_matrix.size() * sizeof(Vertex));
         Adjacency_t* edges = (Adjacency_t*)malloc(num_edges * sizeof(Adjacency_t));
 
@@ -83,8 +83,8 @@ public:
     Builder(GraphType graph_type) : graph_type_(graph_type) {}
 
     // build Graph with no vertex stats
-    typename std::enable_if<std::is_same<VertexStats_t, VertexStats>::value, void>::type
-    BuildCSR(EdgeList<Adjacency_t> &edge_list) {
+    template<typename T = VertexStats_t, typename = typename std::enable_if<std::is_same<T, VertexStats>::value>::type>
+    Graph<Adjacency_t, VertexStats_t> BuildCSR(EdgeList<Adjacency_t> &edge_list) {
         AdjacencyMatrix<Adjacency_t> adjacency_matrix = EdgeListToMatrix(edge_list);
         vertex_ID_t num_edges = SortAndRemoveDuplicates(adjacency_matrix);
         Graph<Adjacency_t, VertexStats_t> graph = MatrixToCSR(num_edges, adjacency_matrix);
@@ -92,8 +92,8 @@ public:
     }
 
     // build Graph with vertex stats
-    typename std::enable_if<!std::is_same<VertexStats_t, VertexStats>::value, void>::type
-    Graph BuildCSR(EdgeList<Adjacency_t> &edge_list, vector<VertexStats_t> &vertex_stats) {
+    template<typename T = VertexStats_t, typename = typename std::enable_if<!std::is_same<T, VertexStats>::value>::type>
+    Graph<Adjacency_t, VertexStats_t> BuildCSR(EdgeList<Adjacency_t> &edge_list, std::vector<VertexStats_t> &vertex_stats) {
         AdjacencyMatrix<Adjacency_t> adjacency_matrix = EdgeListToMatrix(edge_list);
         assert(adjacency_matrix.size() <= vertex_stats.size());
         adjacency_matrix.resize(vertex_stats.size());
@@ -101,7 +101,7 @@ public:
         Graph<Adjacency_t, VertexStats_t> graph = MatrixToCSR(num_edges, adjacency_matrix, vertex_stats);
         return graph;
     }
-}
+};
 
 
 

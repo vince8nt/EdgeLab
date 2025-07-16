@@ -1,7 +1,9 @@
 #ifndef DEBUG_H_
 #define DEBUG_H_
 
-#include <util.h>
+#include "util.h"
+#include "graph.cpp"
+#include "builder.h"
 
 template<typename Adjacency_t, typename VertexStats_t>
 class Debug {

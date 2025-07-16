@@ -2,14 +2,14 @@
 #define GENERATOR_H_
 
 #include <random>
-#include <util.h>
-#include <builder.h>
+#include "util.h"
+#include "builder.h"
 
 enum class GenType {
     ERDOS_RENYI,     // Erdos-Renyi-Gilbert
     WATTS_STROGATZ,  // Watts-Strogatz
     BARABASI_ALBERT, // Barabasi-Albert
-}
+};
 
 template<typename Adjacency_t>
 class Generator {
@@ -29,7 +29,7 @@ public:
             case GenType::BARABASI_ALBERT:
                 break;
         }
-        cout << "Defaulting to Erdos-Renyi" << endl;
+        std::cout << "Defaulting to Erdos-Renyi" << std::endl;
         return GenerateErdosRenyi();
     }
 
@@ -49,9 +49,9 @@ private:
         return edge_list;
     }
 
-    Graph GenerateWattsStrogatz();
+    // Graph GenerateWattsStrogatz();
 
-    Graph GenerateBarabasiAlbert();
+    // Graph GenerateBarabasiAlbert();
 
     const uint32_t seed_ = 111119;
     const GenType gen_type_;
@@ -59,7 +59,7 @@ private:
     const int degree_;
     const vertex_ID_t num_vertices_;
     const edge_ID_t num_edges_;
-}
+};
 
 
 #endif // GENERATOR_H_

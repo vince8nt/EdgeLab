@@ -1,9 +1,8 @@
 #ifndef GRAPH_H_
 #define GRAPH_H_
 
-#include <util.h>
+#include "util.h"
 #include <vector>
-#include <optional>
 
 
 
@@ -34,13 +33,15 @@ public:
         const edge_ID_t csr_index_;
         const vertex_ID_t degree_;
     public:
-        // constructors
-        typename std::enable_if<std::is_same<VertexStats_t, VertexStats>::value, void>::type
-        Vertex(edge_ID_t csr_index, vertex_ID_t degree) :
-            csr_index_(csr_index), degree_(degree) {}
-        typename std::enable_if<!std::is_same<VertexStats_t, VertexStats>::value, void>::type
-        Vertex(const VertexStats_t& vertex_stats, edge_ID_t csr_index, vertex_ID_t degree) :
-            VertexStats_t(vertex_stats), csr_index_(csr_index), degree_(degree) {}
+        // For VertexStats_t == VertexStats
+        template<typename T = VertexStats_t, typename = typename std::enable_if<std::is_same<T, VertexStats>::value>::type>
+        Vertex(edge_ID_t csr_index, vertex_ID_t degree)
+            : csr_index_(csr_index), degree_(degree) {}
+
+        // For VertexStats_t != VertexStats
+        template<typename T = VertexStats_t, typename = typename std::enable_if<!std::is_same<T, VertexStats>::value>::type>
+        Vertex(const VertexStats_t& vertex_stats, edge_ID_t csr_index, vertex_ID_t degree)
+            : VertexStats_t(vertex_stats), csr_index_(csr_index), degree_(degree) {}
 
         // getters
         vertex_ID_t degree() const { return degree_; }
@@ -62,7 +63,7 @@ public:
     }
     ~Graph() {
         free(edges_);
-        free(vertex_stats_);
+        free(vertices_);
     }
     Graph(const Graph&) = delete;
     Graph& operator=(const Graph&) = delete;
