@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <vector>
 #include <iostream>
+#include <type_traits>
 
 using vertex_ID_t = uint32_t;
 using edge_ID_t = uint64_t;

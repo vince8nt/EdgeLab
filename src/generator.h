@@ -1,8 +1,8 @@
 #ifndef GENERATOR_H_
 #define GENERATOR_H_
 
-#include <graph.h>
 #include <util.h>
+#include <builder.h>
 
 enum class GenType {
     ERDOS_RENYI,     // Erdos-Renyi-Gilbert

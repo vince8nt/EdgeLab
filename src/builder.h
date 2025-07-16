@@ -2,41 +2,33 @@
 #define BUILDER_H_
 
 #include <util.h>
+#include <graph.h>
 
 template<typename Adjacency_t, typename VertexStats_t>
 class Builder {
-public:
-    Builder(GraphType graph_type) : graph_type_(graph_type) {}
-    Graph BuildCSR(EdgeList<Adjacency_t> &edge_list) {
-        
-    }
 private:
+    GraphType graph_type_;
+
+    // build AdjacencyMatrix from EdgeList
     AdjacencyMatrix<Adjacency_t> EdgeListToMatrix(EdgeList<Adjacency_t> &edge_list) {
-        if (graph_type_ == GraphType::UNDIRECTED)
-            return UndirectedEdgeListToMatrix(edge_list);
         AdjacencyMatrix<Adjacency_t> adjacency_matrix();
         for (auto &edge : edge_list) {
             while (edge.source_ >= adjacency_matrix.size())
                 adjacency_matrix.push_back(AdjacencyList<Adjacency_t>());
             adjacency_matrix[edge.source_].push_back(edge.adjacency_);
+            if (graph_type_ == GraphType::UNDIRECTED) {
+                Adjacency_t reverse_edge = edge.adjacency_;
+                reverse_edge.dest_ = edge.source_;
+                adjacency_matrix[edge.adjacency_.dest_].push_back(reverse_edge);
+            }
         }
         return adjacency_matrix;
     }
-    AdjacencyMatrix<Adjacency_t> UndirectedEdgeListToMatrix(EdgeList<Adjacency_t> &edge_list) {
-        AdjacencyMatrix<Adjacency_t> adjacency_matrix();
-        for (auto &edge : edge_list) {
-            vertex_ID_t max_vertex = std::max(edge.source_, edge.adjacency_.dest_);
-            while (max_vertex >= adjacency_matrix.size())
-                adjacency_matrix.push_back(AdjacencyList<Adjacency_t>());
-            adjacency_matrix[edge.source_].push_back(edge.adjacency_);
-            adjacency_matrix[edge.adjacency_.dest_].push_back(edge.source_);
-        }
-        return adjacency_matrix;
-    }
-    Graph<Adjacency_t> MatrixToCSR(AdjacencyMatrix<Adjacency_t> &adjacency_matrix) {
-        // sort and remove duplicate edges
-        // for duplicate edges with different weights/IDs, this is non-deterministic
-        edge_ID_t num_edges = 0;
+
+    // sort and remove duplicate edges from AdjacencyMatrix
+    // for duplicate edges with different weights/IDs, this is non-deterministic
+    vertex_ID_t SortAndRemoveDuplicates(AdjacencyMatrix<Adjacency_t> &adjacency_matrix) {
+        vertex_ID_t num_edges = 0;
         for (AdjacencyList<Adjacency_t> &adjacency_list : adjacency_matrix) {
             std::sort(adjacency_list.begin(), adjacency_list.end(),
                 [](const Adjacency_t &a, const Adjacency_t &b) {
@@ -49,13 +41,66 @@ private:
             adjacency_list.resize(last - adjacency_list.begin());
             num_edges += adjacency_list.size();
         }
-
+        return num_edges;
+    }
+    
+    // create CSR without vertex stats
+    Graph<Adjacency_t, VertexStats_t> MatrixToCSR(vertex_ID_t num_edges, AdjacencyMatrix<Adjacency_t> &adjacency_matrix) {
+        using Vertex = Graph<Adjacency_t, VertexStats_t>::Vertex;
+        Vertex* vertices = (Vertex*)malloc(adjacency_matrix.size() * sizeof(Vertex));
         Adjacency_t* edges = (Adjacency_t*)malloc(num_edges * sizeof(Adjacency_t));
-        VertexStats_t* vertices = (VertexStats_t*)malloc(adjacency_matrix.size() * sizeof(VertexStats_t));
 
+        edge_ID_t edges_index = 0;
+        for (vertex_ID_t vertices_index = 0; vertices_index < adjacency_matrix.size(); vertices_index++) {
+            vertices[vertices_index] = {edges_index, adjacency_matrix[vertices_index].size()};
+            for (int i = 0; i < adjacency_matrix[vertices_index].size(); i++)
+                edges[edges_index++] = adjacency_matrix[vertices_index][i];
+        }
+
+        return Graph<Adjacency_t, VertexStats_t>(graph_type_, num_edges, edges, adjacency_matrix.size(), vertices);
     }
 
-    GraphType graph_type_;
+    // create CSR with vertex stats
+    Graph<Adjacency_t, VertexStats_t> MatrixToCSR(vertex_ID_t num_edges,
+            AdjacencyMatrix<Adjacency_t> &adjacency_matrix, vector<VertexStats_t> &vertex_stats) {
+        using Vertex = Graph<Adjacency_t, VertexStats_t>::Vertex;
+        Vertex* vertices = (Vertex*)malloc(adjacency_matrix.size() * sizeof(Vertex));
+        Adjacency_t* edges = (Adjacency_t*)malloc(num_edges * sizeof(Adjacency_t));
+
+        edge_ID_t edges_index = 0;
+        for (vertex_ID_t vertices_index = 0; vertices_index < adjacency_matrix.size(); vertices_index++) {
+            vertices[vertices_index] = Vertex(vertex_stats[vertices_index], edges_index, adjacency_matrix[vertices_index].size());
+            for (int i = 0; i < adjacency_matrix[vertices_index].size(); i++)
+                edges[edges_index++] = adjacency_matrix[vertices_index][i];
+        }
+
+        return Graph<Adjacency_t, VertexStats_t>(graph_type_, num_edges, edges, adjacency_matrix.size(), vertices);
+    }
+
+    
+
+public:
+    Builder(GraphType graph_type) : graph_type_(graph_type) {}
+
+    // build Graph with no vertex stats
+    typename std::enable_if<std::is_same<VertexStats_t, VertexStats>::value, void>::type
+    BuildCSR(EdgeList<Adjacency_t> &edge_list) {
+        AdjacencyMatrix<Adjacency_t> adjacency_matrix = EdgeListToMatrix(edge_list);
+        vertex_ID_t num_edges = SortAndRemoveDuplicates(adjacency_matrix);
+        Graph<Adjacency_t, VertexStats_t> graph = MatrixToCSR(num_edges, adjacency_matrix);
+        return graph;
+    }
+
+    // build Graph with vertex stats
+    typename std::enable_if<!std::is_same<VertexStats_t, VertexStats>::value, void>::type
+    Graph BuildCSR(EdgeList<Adjacency_t> &edge_list, vector<VertexStats_t> &vertex_stats) {
+        AdjacencyMatrix<Adjacency_t> adjacency_matrix = EdgeListToMatrix(edge_list);
+        assert(adjacency_matrix.size() <= vertex_stats.size());
+        adjacency_matrix.resize(vertex_stats.size());
+        vertex_ID_t num_edges = SortAndRemoveDuplicates(adjacency_matrix);
+        Graph<Adjacency_t, VertexStats_t> graph = MatrixToCSR(num_edges, adjacency_matrix, vertex_stats);
+        return graph;
+    }
 }
 
 

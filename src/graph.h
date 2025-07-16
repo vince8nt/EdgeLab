@@ -10,11 +10,19 @@
 template<typename Adjacency_t, typename VertexStats_t>
 class Graph {
 public:
-    Graph(GraphType graph_type, Adjacency_t* edges, VertexStats_t* vertex_stats) :
+    struct Vertex : public VertexStats_t {
+        const edge_ID_t csr_index_;
+        const vertex_ID_t degree_;
+        Vertex(const VertexStats_t& vertex_stats, edge_ID_t csr_index, vertex_ID_t degree) :
+            VertexStats_t(vertex_stats), csr_index_(csr_index), degree_(degree) {}
+    };
+    Graph(GraphType graph_type,
+            edge_ID_t num_edges, Adjacency_t* edges,    
+            vertex_ID_t num_vertices, Vertex* vertices
+            ) :
             graph_type_(graph_type),
-            num_vertices_(vertex_stats->size()),
-            num_edges_(graph_type_ == GraphType::UNDIRECTED ? edges->size() / 2 : edges->size()),
-            edges_(edges), vertex_stats_(vertex_stats) {
+            num_edges_(graph_type_ == GraphType::UNDIRECTED ? num_edges / 2 : num_edges),
+            edges_(edges), num_vertices_(num_vertices), vertices_(vertices) {
     }
     ~Graph() {
         free(edges_);
@@ -25,15 +33,11 @@ public:
     Graph(Graph&&) = delete;
     Graph& operator=(Graph&&) = delete;
 private:
-    struct Vertex : public VertexStats_t {
-        const edge_ID_t csr_index_;
-        const vertex_ID_t degree_;
-    }
     const GraphType graph_type_;
-    const vertex_ID_t num_vertices_;
     const edge_ID_t num_edges_;
     const Adjacency_t* const edges_;
-    const Vertex* vertex_stats_;
+    const vertex_ID_t num_vertices_;
+    const Vertex* vertices_;
     
 }
 
