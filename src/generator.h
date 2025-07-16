@@ -1,6 +1,7 @@
 #ifndef GENERATOR_H_
 #define GENERATOR_H_
 
+#include <random>
 #include <util.h>
 #include <builder.h>
 
@@ -35,18 +36,29 @@ public:
 private:
     EdgeList<Adjacency_t> GenerateErdosRenyi() {
         // generate random edges
-        return EdgeList<Adjacency_t>();
+        std::mt19937 gen;
+        gen.seed(seed_);
+        std::uniform_int_distribution<vertex_ID_t> dis(0, num_vertices_ - 1);
+
+        EdgeList<Adjacency_t> edge_list;
+        edge_list.reserve(num_edges_);
+        for (edge_ID_t i = 0; i < num_edges_; i++) {
+            // TODO: add weights
+            edge_list.push_back({dis(gen), dis(gen)});
+        }
+        return edge_list;
     }
 
     Graph GenerateWattsStrogatz();
 
     Graph GenerateBarabasiAlbert();
 
+    const uint32_t seed_ = 111119;
     const GenType gen_type_;
     const int scale_;
     const int degree_;
     const vertex_ID_t num_vertices_;
-    edge_ID_t num_edges_; // not const because it's only an estimate before generation
+    const edge_ID_t num_edges_;
 }
 
 
