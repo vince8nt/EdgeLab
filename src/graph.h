@@ -12,11 +12,12 @@ class Graph {
 public:
     struct Edges {
     private:
+        const vertex_ID_t size_;
         const Adjacency_t* begin_;
         const Adjacency_t* end_;
     public:
         Edges(Adjacency_t* edges, edge_ID_t edges_index, vertex_ID_t size) :
-            begin_(edges + edges_index), end_(edges + edges_index + size) {}
+            size_(size), begin_(edges + edges_index), end_(edges + edges_index + size) {}
         
         // getters
         vertex_ID_t size() const { return size_; }
