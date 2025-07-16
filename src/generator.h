@@ -19,7 +19,7 @@ public:
             num_edges_(static_cast<edge_ID_t>(num_vertices_) * degree) {
     }
 
-    Graph<Adjacency_t> Generate() {
+    EdgeList<Adjacency_t> Generate() {
         switch (gen_type_) {
             case GenType::ERDOS_RENYI:
                 return GenerateErdosRenyi();
@@ -28,23 +28,26 @@ public:
             case GenType::BARABASI_ALBERT:
                 break;
         }
+        cout << "Defaulting to Erdos-Renyi" << endl;
+        return GenerateErdosRenyi();
     }
 
 private:
-    Graph<Adjacency_t> GenerateErdosRenyi() {
-        Adjacency_t* edges = (Adjacency_t*)malloc(num_vertices_ * num_edges_ * sizeof(Adjacency_t));
-        return Graph<Adjacency_t>(edges);
+    EdgeList<Adjacency_t> GenerateErdosRenyi() {
+        // generate random edges
+        return EdgeList<Adjacency_t>();
     }
 
     Graph GenerateWattsStrogatz();
 
     Graph GenerateBarabasiAlbert();
 
-    GenType gen_type_;
-    int scale_;
-    int degree_;
-    vertex_ID_t num_vertices_;
-    edge_ID_t num_edges_;
+    const GenType gen_type_;
+    const int scale_;
+    const int degree_;
+    const vertex_ID_t num_vertices_;
+    edge_ID_t num_edges_; // not const because it's only an estimate before generation
 }
 
 
+#endif // GENERATOR_H_
