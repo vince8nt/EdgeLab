@@ -3,7 +3,7 @@
 
 #include <random>
 #include "util.h"
-#include "builder.h"
+// #include "builder.h"
 
 enum class GenType {
     ERDOS_RENYI,     // Erdos-Renyi-Gilbert
@@ -11,8 +11,9 @@ enum class GenType {
     BARABASI_ALBERT, // Barabasi-Albert
 };
 
-template<typename Adjacency_t>
+template<NonDataVertexType Vertex_t, NonDataEdgeType Edge_t, GraphType Graph_t>
 class Generator {
+    using SparseRowGraph = SparseRowGraph<Vertex_t, Edge_t>;
 public:
     Generator(GenType gen_type, int scale, int degree) :
             gen_type_(gen_type), scale_(scale), degree_(degree),
@@ -20,7 +21,7 @@ public:
             num_edges_(static_cast<edge_ID_t>(num_vertices_) * degree) {
     }
 
-    EdgeList<Adjacency_t> Generate() {
+    SparseRowGraph Generate() {
         switch (gen_type_) {
             case GenType::ERDOS_RENYI:
                 return GenerateErdosRenyi();
@@ -34,19 +35,53 @@ public:
     }
 
 private:
-    EdgeList<Adjacency_t> GenerateErdosRenyi() {
-        // generate random edges
+    SparseRowGraph GenerateErdosRenyi() {
         std::mt19937 gen;
         gen.seed(seed_);
-        std::uniform_int_distribution<vertex_ID_t> dis(0, num_vertices_ - 1);
+        std::uniform_int_distribution<vertex_ID_t> vertex_dist(0, num_vertices_ - 1);
+        std::uniform_real_distribution<weight_t> weight_dist(0.0, 2.0);
+        SparseRowGraph srg(num_vertices_);
 
-        EdgeList<Adjacency_t> edge_list;
-        edge_list.reserve(num_edges_);
+        // generate random edges
+        auto &matrix = srg.matrix;
         for (edge_ID_t i = 0; i < num_edges_; i++) {
-            // TODO: add weights
-            edge_list.push_back({dis(gen), dis(gen)});
+            vertex_ID_t src = vertex_dist(gen);
+            vertex_ID_t dest = vertex_dist(gen);
+            // if (src == dest) continue; // disable self loops
+            if constexpr (WeightedEdgeType<Edge_t>) {
+                weight_t weight = 2 - weight_dist(gen);
+                if constexpr (Graph_t == GraphType::UNDIRECTED) {
+                    if (src <= dest)
+                        matrix[src].push_back({dest, weight});
+                    else
+                        matrix[dest].push_back({src, weight});
+                }
+                else
+                    matrix[src].push_back({dest, weight});
+            }
+            else {
+                if constexpr (Graph_t == GraphType::UNDIRECTED) {
+                    if (src <= dest)
+                        matrix[src].push_back({dest});
+                    else
+                        matrix[dest].push_back({src});
+                }
+                else
+                    matrix[src].push_back({dest});
+            }
         }
-        return edge_list;
+
+        // generate random (weighted) vertices
+        if constexpr (WeightedVertexType<Vertex_t>) {
+            auto &vertices = srg.vertices;
+            vertices.reserve(num_vertices_);
+            for (vertex_ID_t v = 0; v < num_vertices_; v++) {
+                vertices.push_back(2 - weight_dist(gen));
+            }
+        }
+
+        std::cout << "generation finished" << std::endl;
+        return srg;
     }
 
     // Graph GenerateWattsStrogatz();

@@ -7,7 +7,6 @@
 #include <type_traits>
 #include <algorithm>
 #include <concepts> // For std::derived_from
-#include <memory>
 
 
 using vertex_ID_t = uint32_t;
@@ -19,6 +18,7 @@ enum class GraphType {
     UNDIRECTED,
     DIRECTED
 };
+/*
 enum class VertexType {
     UNWEIGHTED,
     WEIGHTED,
@@ -30,6 +30,37 @@ enum class EdgeType {
     UNWEIGHTED_DATA,
     WEIGHTED,
     WEIGHTED_DATA
+};
+*/
+
+
+// Vertex (excluding ID and adjacency data)
+// Contains optional weight + mutable data
+// Mutable Data stored inplace - for large data sizes, use a reference/pointer.
+struct VertexUW {
+    using data_type = void;
+    weight_t weight() const { return 1.0; }
+};
+template<typename Data_t>
+struct VertexUWD : public VertexUW {
+    using data_type = Data_t;
+    VertexUWD(Data_t data) : data_(data) {}
+    Data_t &data() { return data_; }
+protected:
+    Data_t data_;
+};
+struct VertexW : public VertexUW {
+    VertexW(weight_t weight) : weight_(weight) {}
+    weight_t weight() const { return weight_; }
+protected:
+    const weight_t weight_;
+};
+template<typename Data_t>
+struct VertexWD : public VertexUWD<Data_t> {
+    VertexWD(weight_t weight, Data_t data) : VertexUWD<Data_t>(data), weight_(weight) {}
+    weight_t weight() const { return weight_; }
+protected:
+    const weight_t weight_;
 };
 
 
@@ -68,40 +99,62 @@ protected:
 };
 
 
-// Adjacency list/matrix (used when making CSR)
+// Vertex concepts
+template <typename Vertex_t>
+concept EmptyVertexType = std::is_same_v<Vertex_t, VertexUW>;
+template <typename Vertex_t>
+concept NonEmptyVertexType = std::derived_from<Vertex_t, VertexUW> and
+                             !EmptyVertexType<Vertex_t>;
+                             // !std::is_same_v<Vertex_t, VertexUW>;
+template <typename Vertex_t>
+concept DataVertexType = std::derived_from<Vertex_t, VertexUWD<typename Vertex_t::data_type>>;
+template <typename Vertex_t>
+concept NonDataVertexType = std::derived_from<Vertex_t, VertexUW> and
+                            !DataVertexType<Vertex_t>;
+template <typename Vertex_t>
+concept WeightedVertexType = std::is_same_v<Vertex_t, VertexW> or
+                             std::is_same_v<Vertex_t, VertexWD<typename Vertex_t::data_type>>;
+template <typename Vertex_t>
+concept NonWeightedVertexType = std::derived_from<Vertex_t, VertexUW> and
+                                !WeightedVertexType<Vertex_t>;
+
+
+// edge concepts
+template <typename Edge_t>
+concept DataEdgeType = std::derived_from<Edge_t, EdgeUWD<typename Edge_t::data_type>>;
+template <typename Edge_t>
+concept NonDataEdgeType = std::derived_from<Edge_t, EdgeUW> and
+                          !DataEdgeType<Edge_t>;
+template <typename Edge_t>
+concept WeightedEdgeType = std::is_same_v<Edge_t, EdgeW> or
+                           std::is_same_v<Edge_t, EdgeWD<typename Edge_t::data_type>>;
+template <typename Edge_t>
+concept NonWeightedEdgeType = std::derived_from<Edge_t, EdgeUW> and
+                          !WeightedEdgeType<Edge_t>;
+
+
+// Vertex and Edge vector-based containers (unsorted and unflattened) (used during generation / loading)
 template<std::derived_from<EdgeUW> Edge_t>
 using AdjacencyList = std::vector<Edge_t>;
 template<std::derived_from<EdgeUW> Edge_t>
 using AdjacencyMatrix = std::vector<AdjacencyList<Edge_t>>;
-
-
-// Vertex (excluding ID and adjacency data)
-// Contains optional weight + mutable data
-// Mutable Data stored inplace - for large data sizes, use a reference/pointer.
-struct VertexUW {
-    using data_type = void;
-    weight_t weight() const { return 1.0; }
+// Sparse Row graph (vertex list + adjacency matrix)
+template<typename Vertex_t, typename Edge_t>
+struct SparseRowGraph;
+template<typename Vertex_t, typename Edge_t> // Specialization for EmptyVertex
+    requires EmptyVertexType<Vertex_t>
+struct SparseRowGraph<Vertex_t, Edge_t> {
+    SparseRowGraph() {};
+    SparseRowGraph(vertex_ID_t num_vertices) : matrix(AdjacencyMatrix<Edge_t>(num_vertices)) {};
+    AdjacencyMatrix<Edge_t> matrix;
 };
-template<typename Data_t>
-struct VertexUWD : public VertexUW {
-    using data_type = Data_t;
-    VertexUWD(Data_t data) : data_(data) {}
-    Data_t &data() { return data_; }
-protected:
-    Data_t data_;
-};
-struct VertexW : public VertexUW {
-    VertexW(weight_t weight) : weight_(weight) {}
-    weight_t weight() const { return weight_; }
-protected:
-    const weight_t weight_;
-};
-template<typename Data_t>
-struct VertexWD : public VertexUWD<Data_t> {
-    VertexWD(weight_t weight, Data_t data) : VertexUWD<Data_t>(data), weight_(weight) {}
-    weight_t weight() const { return weight_; }
-protected:
-    const weight_t weight_;
+template<typename Vertex_t, typename Edge_t> // Specialization for NonEmptyVertex
+    requires NonEmptyVertexType<Vertex_t>
+struct SparseRowGraph<Vertex_t, Edge_t> {
+    SparseRowGraph() {};
+    SparseRowGraph(vertex_ID_t num_vertices) : matrix(AdjacencyMatrix<Edge_t>(num_vertices)) {};
+    std::vector<Vertex_t> vertices;
+    AdjacencyMatrix<Edge_t> matrix;
 };
 
 
