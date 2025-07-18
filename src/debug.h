@@ -23,15 +23,15 @@ public:
         std::cout << std::endl;
     }
 
-    void print(SparseRowGraph<Vertex_t, Edge_t> &srg) {
+    void print(VectorGraph<Vertex_t, Edge_t> &vg) {
         std::cout << "Sparse Row Graph:" << std::endl;
-        for (vertex_ID_t i = 0; i < srg.matrix.size(); i++) {
+        for (vertex_ID_t i = 0; i < vg.matrix.size(); i++) {
             if constexpr (WeightedVertexType<Vertex_t>)
                 std::cout << "["<< i << " " <<
-                    std::setprecision(3) << srg.vertices[i].weight() << "]: ";
+                    std::setprecision(3) << vg.vertices[i].weight() << "]: ";
             else
                 std::cout << i << ": ";
-            print(srg.matrix[i]);
+            print(vg.matrix[i]);
         }
     }
 /*

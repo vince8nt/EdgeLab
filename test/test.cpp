@@ -8,13 +8,13 @@ public:
     void run_test(GenType gen_type, int scale, int degree) {
         // generate edge list
         Generator<Vertex_t, Edge_t, Graph_t> generator(gen_type, scale, degree);
-        SparseRowGraph<Vertex_t, Edge_t> srg = generator.Generate();
-        D_.print(srg);
-/*
-        Builder<Adjacency_t, VertexStats_t> builder(graph_type);
-        Graph<Adjacency_t, VertexStats_t> graph = builder.BuildCSR(edge_list);
-        D_.print_graph(graph);
-        D_.print_graph_it(graph);*/
+        VectorGraph<Vertex_t, Edge_t> vg = generator.Generate();
+        D_.print(vg);
+
+        Builder<Vertex_t, Edge_t, Graph_t> builder;
+        Graph<Vertex_t, Edge_t, Graph_t> graph = builder.BuildGraph(vg);
+        // D_.print_graph(graph);
+        // D_.print_graph_it(graph);
     }
 
 private:
@@ -24,7 +24,6 @@ private:
 int main() {
 
     Tester<VertexW, EdgeUW, GraphType::UNDIRECTED> tester;
-    std::cout << "got here" << std::endl;
     tester.run_test(GenType::ERDOS_RENYI, 4, 2);
 }
 

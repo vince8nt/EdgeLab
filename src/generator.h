@@ -3,7 +3,7 @@
 
 #include <random>
 #include "util.h"
-// #include "builder.h"
+#include "builder.h"
 
 enum class GenType {
     ERDOS_RENYI,     // Erdos-Renyi-Gilbert
@@ -13,7 +13,7 @@ enum class GenType {
 
 template<NonDataVertexType Vertex_t, NonDataEdgeType Edge_t, GraphType Graph_t>
 class Generator {
-    using SparseRowGraph = SparseRowGraph<Vertex_t, Edge_t>;
+    using VectorGraph = VectorGraph<Vertex_t, Edge_t>;
 public:
     Generator(GenType gen_type, int scale, int degree) :
             gen_type_(gen_type), scale_(scale), degree_(degree),
@@ -21,7 +21,7 @@ public:
             num_edges_(static_cast<edge_ID_t>(num_vertices_) * degree) {
     }
 
-    SparseRowGraph Generate() {
+    VectorGraph Generate() {
         switch (gen_type_) {
             case GenType::ERDOS_RENYI:
                 return GenerateErdosRenyi();
@@ -35,15 +35,15 @@ public:
     }
 
 private:
-    SparseRowGraph GenerateErdosRenyi() {
+    VectorGraph GenerateErdosRenyi() {
         std::mt19937 gen;
         gen.seed(seed_);
         std::uniform_int_distribution<vertex_ID_t> vertex_dist(0, num_vertices_ - 1);
         std::uniform_real_distribution<weight_t> weight_dist(0.0, 2.0);
-        SparseRowGraph srg(num_vertices_);
+        VectorGraph vg(num_vertices_);
 
         // generate random edges
-        auto &matrix = srg.matrix;
+        auto &matrix = vg.matrix;
         for (edge_ID_t i = 0; i < num_edges_; i++) {
             vertex_ID_t src = vertex_dist(gen);
             vertex_ID_t dest = vertex_dist(gen);
@@ -73,7 +73,7 @@ private:
 
         // generate random (weighted) vertices
         if constexpr (WeightedVertexType<Vertex_t>) {
-            auto &vertices = srg.vertices;
+            auto &vertices = vg.vertices;
             vertices.reserve(num_vertices_);
             for (vertex_ID_t v = 0; v < num_vertices_; v++) {
                 vertices.push_back(2 - weight_dist(gen));
@@ -81,7 +81,7 @@ private:
         }
 
         std::cout << "generation finished" << std::endl;
-        return srg;
+        return vg;
     }
 
     // Graph GenerateWattsStrogatz();

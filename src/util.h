@@ -40,18 +40,28 @@ enum class EdgeType {
 struct VertexUW {
     using data_type = void;
     weight_t weight() const { return 1.0; }
+    // make this whole file into 1 templated class so we don't have annoying stuff like this
+    /*Graph<VertexUW, Edge_t, Graph_t>::Vertex vertex(const Edge_t* edges_begin, vertex_ID_t degree) {
+        return {edges_begin, degree};
+    }*/
 };
 template<typename Data_t>
 struct VertexUWD : public VertexUW {
     using data_type = Data_t;
     VertexUWD(Data_t data) : data_(data) {}
     Data_t &data() { return data_; }
+    /*Graph<VertexUWD, Edge_t, Graph_t>::Vertex vertex(const Edge_t* edges_begin, vertex_ID_t degree) {
+        return {data_, edges_begin, degree};
+    }*/
 protected:
-    Data_t data_;
+    alignas(vertex_ID_t) Data_t data_;
 };
 struct VertexW : public VertexUW {
     VertexW(weight_t weight) : weight_(weight) {}
     weight_t weight() const { return weight_; }
+    /*Graph<VertexW, Edge_t, Graph_t>::Vertex vertex(const Edge_t* edges_begin, vertex_ID_t degree) {
+        return {weight_, edges_begin, degree};
+    }*/
 protected:
     const weight_t weight_;
 };
@@ -59,6 +69,9 @@ template<typename Data_t>
 struct VertexWD : public VertexUWD<Data_t> {
     VertexWD(weight_t weight, Data_t data) : VertexUWD<Data_t>(data), weight_(weight) {}
     weight_t weight() const { return weight_; }
+    /*Graph<VertexWD, Edge_t, Graph_t>::Vertex vertex(const Edge_t* edges_begin, vertex_ID_t degree) {
+        return {data_, weight_, edges_begin, degree};
+    }*/
 protected:
     const weight_t weight_;
 };
@@ -72,6 +85,7 @@ struct EdgeUW {
     using data_type = void;
     vertex_ID_t dest() const { return dest_; }
     weight_t weight() const { return 1.0; }
+    EdgeUW inverse(vertex_ID_t src) { return(EdgeUW(src)); }
 protected:
     const vertex_ID_t dest_;    
 };
@@ -80,12 +94,14 @@ struct EdgeUWD : public EdgeUW {
     EdgeUWD(vertex_ID_t dest, Data_t data) : EdgeUW(dest), data_(data) {}
     using data_type = Data_t;
     Data_t &data() { return data_; }
+    EdgeUWD inverse(vertex_ID_t src) { return(EdgeUWD(src, data_)); }
 protected:
-    Data_t data_;
+    alignas(vertex_ID_t) Data_t data_;
 };
 struct EdgeW : public EdgeUW {
     EdgeW(vertex_ID_t dest, weight_t weight) : EdgeUW(dest), weight_(weight) {}
     weight_t weight() const { return weight_; }
+    EdgeW inverse(vertex_ID_t src) { return(EdgeW(src, weight_)); }
 protected:
     const weight_t weight_;
 };
@@ -94,6 +110,7 @@ struct EdgeWD : public EdgeUWD<Data_t> {
     EdgeWD(vertex_ID_t dest, weight_t weight, Data_t data) :
         EdgeUWD<Data_t>(dest, data), weight_(weight) {}
     weight_t weight() const { return weight_; }
+    EdgeWD inverse(vertex_ID_t src) { return(EdgeWD(src, weight_, this->data_)); }
 protected:
     const weight_t weight_;
 };
@@ -138,21 +155,21 @@ template<std::derived_from<EdgeUW> Edge_t>
 using AdjacencyList = std::vector<Edge_t>;
 template<std::derived_from<EdgeUW> Edge_t>
 using AdjacencyMatrix = std::vector<AdjacencyList<Edge_t>>;
-// Sparse Row graph (vertex list + adjacency matrix)
+// vector graph (vertex list + adjacency matrix)
 template<typename Vertex_t, typename Edge_t>
-struct SparseRowGraph;
+struct VectorGraph;
 template<typename Vertex_t, typename Edge_t> // Specialization for EmptyVertex
     requires EmptyVertexType<Vertex_t>
-struct SparseRowGraph<Vertex_t, Edge_t> {
-    SparseRowGraph() {};
-    SparseRowGraph(vertex_ID_t num_vertices) : matrix(AdjacencyMatrix<Edge_t>(num_vertices)) {};
+struct VectorGraph<Vertex_t, Edge_t> {
+    VectorGraph() {};
+    VectorGraph(vertex_ID_t num_vertices) : matrix(AdjacencyMatrix<Edge_t>(num_vertices)) {};
     AdjacencyMatrix<Edge_t> matrix;
 };
 template<typename Vertex_t, typename Edge_t> // Specialization for NonEmptyVertex
     requires NonEmptyVertexType<Vertex_t>
-struct SparseRowGraph<Vertex_t, Edge_t> {
-    SparseRowGraph() {};
-    SparseRowGraph(vertex_ID_t num_vertices) : matrix(AdjacencyMatrix<Edge_t>(num_vertices)) {};
+struct VectorGraph<Vertex_t, Edge_t> {
+    VectorGraph() {};
+    VectorGraph(vertex_ID_t num_vertices) : matrix(AdjacencyMatrix<Edge_t>(num_vertices)) {};
     std::vector<Vertex_t> vertices;
     AdjacencyMatrix<Edge_t> matrix;
 };
