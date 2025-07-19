@@ -77,7 +77,7 @@ private:
                 new (&vertices[vertex_id]) Vertex(edges_begin, degree);
             else   
                 new (&vertices[vertex_id]) Vertex(vg.vertices[vertex_id], edges_begin, degree);
-            for (int i = 0; i < degrees[vertex_id]; i++) {
+            for (vertex_ID_t i = 0; i < degrees[vertex_id]; i++) {
                 edges[edges_index++] = vg.matrix[vertex_id][i];
             }
         }
