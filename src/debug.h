@@ -3,14 +3,18 @@
 
 #include <iomanip>
 #include "util.h"
+#include "graph_comp.h"
 // #include "graph.cpp"
 // #include "builder.h"
 
-template<typename Vertex_t, typename Edge_t>
+template<typename Vertex_t, typename Edge_t, GraphType Graph_t>
 class Debug {
+    using AdjacencyList = AdjacencyList<Edge_t>;
+    using VectorGraph = VectorGraph<Vertex_t, Edge_t>;
+    using Graph = Graph<Vertex_t, Edge_t, Graph_t>;
 public:
 
-    void print(AdjacencyList<Edge_t> &adjacency_list) {
+    void print(AdjacencyList &adjacency_list) {
         for (auto &edge : adjacency_list) {
             if constexpr (WeightedEdgeType<Edge_t>) {
                 std::cout << "(" << edge.dest() << " "
@@ -23,7 +27,7 @@ public:
         std::cout << std::endl;
     }
 
-    void print(VectorGraph<Vertex_t, Edge_t> &vg) {
+    void print(VectorGraph &vg) {
         std::cout << "Sparse Row Graph:" << std::endl;
         for (vertex_ID_t i = 0; i < vg.matrix.size(); i++) {
             if constexpr (WeightedVertexType<Vertex_t>)
@@ -34,9 +38,9 @@ public:
             print(vg.matrix[i]);
         }
     }
-/*
+
     // should have the same output as print_adjacency_matrix
-    void print_graph(Graph<Adjacency_t, VertexStats_t> &graph) {
+    void print(Graph &graph) {
         std::cout << "Graph (printed with indexing):" << std::endl;
         for (vertex_ID_t v = 0; v < graph.num_vertices(); v++) {
             std::cout << v << ": ";
@@ -49,7 +53,7 @@ public:
     }
 
     // should have the same output as print_adjacency_matrix
-    void print_graph_it(Graph<Adjacency_t, VertexStats_t> &graph) {
+    void print_it(Graph &graph) {
         std::cout << "Graph (printed with iterators):" << std::endl;
         vertex_ID_t v_id = 0;
         for (auto &v : graph) { // TODO: find a way to get vertex ID from iterator
@@ -61,7 +65,6 @@ public:
             v_id++;
         }
     }
-        */
 };
 
 #endif // DEBUG_H_

@@ -13,17 +13,17 @@ public:
 
         Builder<Vertex_t, Edge_t, Graph_t> builder;
         Graph<Vertex_t, Edge_t, Graph_t> graph = builder.BuildGraph(vg);
-        // D_.print_graph(graph);
-        // D_.print_graph_it(graph);
+        D_.print(graph);
+        D_.print_it(graph);
     }
 
 private:
-    Debug<Vertex_t, Edge_t> D_;
+    Debug<Vertex_t, Edge_t, Graph_t> D_;
 };
 
 int main() {
 
-    Tester<VertexW, EdgeUW, GraphType::UNDIRECTED> tester;
+    Tester<VertexUW, EdgeW, GraphType::UNDIRECTED> tester;
     tester.run_test(GenType::ERDOS_RENYI, 4, 2);
 }
 

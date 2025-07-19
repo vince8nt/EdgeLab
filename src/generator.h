@@ -3,6 +3,7 @@
 
 #include <random>
 #include "util.h"
+#include "graph_comp.h"
 #include "builder.h"
 
 enum class GenType {
