@@ -5,6 +5,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cctype>
+#include "util.h"
 #include "graph_comp.h"
 #include "generator.h" // for GenType
 
@@ -24,11 +25,6 @@ template<typename V, typename E, GraphType G> class Graph;
 template<typename V, typename E> struct VectorGraph;
 
 // Enum definitions for CLI
-enum class CLIGraphType {
-    UNDIRECTED,
-    DIRECTED
-};
-
 enum class CLIVertexType {
     UNWEIGHTED,
     WEIGHTED,
@@ -44,7 +40,7 @@ enum class CLIEdgeType {
 };
 
 struct CLIOptions {
-    CLIGraphType graph_type = CLIGraphType::UNDIRECTED;
+    GraphType graph_type = GraphType::UNDIRECTED;
     CLIVertexType vertex_type = CLIVertexType::UNWEIGHTED;
     CLIEdgeType edge_type = CLIEdgeType::UNWEIGHTED;
     int scale;
@@ -70,10 +66,10 @@ inline void print_usage(const char* prog_name) {
     std::cout << std::endl;
 }
 
-inline bool parse_enum(const std::string& value, CLIGraphType& out) {
+inline bool parse_enum(const std::string& value, GraphType& out) {
     std::string v = to_lower(value);
-    if (v == "undirected") { out = CLIGraphType::UNDIRECTED; return true; }
-    if (v == "directed")   { out = CLIGraphType::DIRECTED;   return true; }
+    if (v == "undirected") { out = GraphType::UNDIRECTED; return true; }
+    if (v == "directed")   { out = GraphType::DIRECTED;   return true; }
     return false;
 }
 inline bool parse_enum(const std::string& value, CLIVertexType& out) {
@@ -103,9 +99,6 @@ inline bool parse_enum(const std::string& value, GenType& out) {
 // Map CLI enums to internal enums
 // enum class GraphType { UNDIRECTED, DIRECTED };
 // enum class GenType { ERDOS_RENYI, WATTS_STROGATZ, BARABASI_ALBERT };
-inline GraphType to_graph_type(CLIGraphType t) {
-    return (t == CLIGraphType::UNDIRECTED) ? GraphType::UNDIRECTED : GraphType::DIRECTED;
-}
 
 // Parse CLI arguments and return CLIOptions. Prints usage and exits on error.
 inline CLIOptions parse_cli(int argc, char** argv) {
@@ -173,7 +166,7 @@ void dispatch_types(const CLIOptions& opts, Callable&& func) {
         case CLIVertexType::UNWEIGHTED:
             switch (opts.edge_type) {
                 case CLIEdgeType::UNWEIGHTED:
-                    switch (to_graph_type(opts.graph_type)) {
+                    switch (opts.graph_type) {
                         case GraphType::UNDIRECTED:
                             func.template operator()<VertexUW, EdgeUW, GraphType::UNDIRECTED>();
                             break;
@@ -183,7 +176,7 @@ void dispatch_types(const CLIOptions& opts, Callable&& func) {
                     }
                     break;
                 case CLIEdgeType::WEIGHTED:
-                    switch (to_graph_type(opts.graph_type)) {
+                    switch (opts.graph_type) {
                         case GraphType::UNDIRECTED:
                             func.template operator()<VertexUW, EdgeW, GraphType::UNDIRECTED>();
                             break;
@@ -200,7 +193,7 @@ void dispatch_types(const CLIOptions& opts, Callable&& func) {
         case CLIVertexType::WEIGHTED:
             switch (opts.edge_type) {
                 case CLIEdgeType::UNWEIGHTED:
-                    switch (to_graph_type(opts.graph_type)) {
+                    switch (opts.graph_type) {
                         case GraphType::UNDIRECTED:
                             func.template operator()<VertexW, EdgeUW, GraphType::UNDIRECTED>();
                             break;
@@ -210,7 +203,7 @@ void dispatch_types(const CLIOptions& opts, Callable&& func) {
                     }
                     break;
                 case CLIEdgeType::WEIGHTED:
-                    switch (to_graph_type(opts.graph_type)) {
+                    switch (opts.graph_type) {
                         case GraphType::UNDIRECTED:
                             func.template operator()<VertexW, EdgeW, GraphType::UNDIRECTED>();
                             break;
