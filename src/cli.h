@@ -5,6 +5,23 @@
 #include <iostream>
 #include <algorithm>
 #include <cctype>
+#include "graph_comp.h"
+#include "generator.h" // for GenType
+
+// Forward declarations for custom types (replace with actual includes in your main file)
+struct VertexUW;
+struct VertexW;
+template<typename T> struct VertexUWD;
+template<typename T> struct VertexWD;
+struct EdgeUW;
+struct EdgeW;
+template<typename T> struct EdgeUWD;
+template<typename T> struct EdgeWD;
+enum class GraphType;
+template<NonDataVertexType V, NonDataEdgeType E, GraphType G> class Generator;
+template<typename V, typename E, GraphType G> class Builder;
+template<typename V, typename E, GraphType G> class Graph;
+template<typename V, typename E> struct VectorGraph;
 
 // Enum definitions for CLI
 enum class CLIGraphType {
@@ -26,19 +43,13 @@ enum class CLIEdgeType {
     WEIGHTED_DATA
 };
 
-enum class CLIGenType {
-    ERDOS_RENYI,
-    WATTS_STROGATZ,
-    BARABASI_ALBERT
-};
-
 struct CLIOptions {
     CLIGraphType graph_type = CLIGraphType::UNDIRECTED;
     CLIVertexType vertex_type = CLIVertexType::UNWEIGHTED;
     CLIEdgeType edge_type = CLIEdgeType::UNWEIGHTED;
     int scale;
     int degree;
-    CLIGenType gen_type;
+    GenType gen_type;
 };
 
 inline std::string to_lower(const std::string& s) {
@@ -81,12 +92,19 @@ inline bool parse_enum(const std::string& value, CLIEdgeType& out) {
     if (v == "weighted_data")     { out = CLIEdgeType::WEIGHTED_DATA;     return true; }
     return false;
 }
-inline bool parse_enum(const std::string& value, CLIGenType& out) {
+inline bool parse_enum(const std::string& value, GenType& out) {
     std::string v = to_lower(value);
-    if (v == "erdos_renyi")       { out = CLIGenType::ERDOS_RENYI;       return true; }
-    if (v == "watts_strogatz")    { out = CLIGenType::WATTS_STROGATZ;    return true; }
-    if (v == "barabasi_albert")   { out = CLIGenType::BARABASI_ALBERT;   return true; }
+    if (v == "erdos_renyi")       { out = GenType::ERDOS_RENYI;       return true; }
+    if (v == "watts_strogatz")    { out = GenType::WATTS_STROGATZ;    return true; }
+    if (v == "barabasi_albert")   { out = GenType::BARABASI_ALBERT;   return true; }
     return false;
+}
+
+// Map CLI enums to internal enums
+// enum class GraphType { UNDIRECTED, DIRECTED };
+// enum class GenType { ERDOS_RENYI, WATTS_STROGATZ, BARABASI_ALBERT };
+inline GraphType to_graph_type(CLIGraphType t) {
+    return (t == CLIGraphType::UNDIRECTED) ? GraphType::UNDIRECTED : GraphType::DIRECTED;
 }
 
 // Parse CLI arguments and return CLIOptions. Prints usage and exits on error.
@@ -138,6 +156,78 @@ inline CLIOptions parse_cli(int argc, char** argv) {
         exit(1);
     }
     return opts;
+}
+
+
+// Generic type dispatcher for any test program
+// Usage:
+//   dispatch_types(opts, MyFunctor{opts});
+//   or with a lambda (C++20):
+//   dispatch_types(opts, [&](auto Vertex_t, auto Edge_t, auto G) { ... });
+//
+// The callable must have a templated operator() or be a generic lambda.
+
+template <typename Callable>
+void dispatch_types(const CLIOptions& opts, Callable&& func) {
+    switch (opts.vertex_type) {
+        case CLIVertexType::UNWEIGHTED:
+            switch (opts.edge_type) {
+                case CLIEdgeType::UNWEIGHTED:
+                    switch (to_graph_type(opts.graph_type)) {
+                        case GraphType::UNDIRECTED:
+                            func.template operator()<VertexUW, EdgeUW, GraphType::UNDIRECTED>();
+                            break;
+                        case GraphType::DIRECTED:
+                            func.template operator()<VertexUW, EdgeUW, GraphType::DIRECTED>();
+                            break;
+                    }
+                    break;
+                case CLIEdgeType::WEIGHTED:
+                    switch (to_graph_type(opts.graph_type)) {
+                        case GraphType::UNDIRECTED:
+                            func.template operator()<VertexUW, EdgeW, GraphType::UNDIRECTED>();
+                            break;
+                        case GraphType::DIRECTED:
+                            func.template operator()<VertexUW, EdgeW, GraphType::DIRECTED>();
+                            break;
+                    }
+                    break;
+                default:
+                    std::cerr << "[EdgeLab CLI] Only unweighted/weighted edge types are supported in dispatch_types.\n";
+                    break;
+            }
+            break;
+        case CLIVertexType::WEIGHTED:
+            switch (opts.edge_type) {
+                case CLIEdgeType::UNWEIGHTED:
+                    switch (to_graph_type(opts.graph_type)) {
+                        case GraphType::UNDIRECTED:
+                            func.template operator()<VertexW, EdgeUW, GraphType::UNDIRECTED>();
+                            break;
+                        case GraphType::DIRECTED:
+                            func.template operator()<VertexW, EdgeUW, GraphType::DIRECTED>();
+                            break;
+                    }
+                    break;
+                case CLIEdgeType::WEIGHTED:
+                    switch (to_graph_type(opts.graph_type)) {
+                        case GraphType::UNDIRECTED:
+                            func.template operator()<VertexW, EdgeW, GraphType::UNDIRECTED>();
+                            break;
+                        case GraphType::DIRECTED:
+                            func.template operator()<VertexW, EdgeW, GraphType::DIRECTED>();
+                            break;
+                    }
+                    break;
+                default:
+                    std::cerr << "[EdgeLab CLI] Only unweighted/weighted edge types are supported in dispatch_types.\n";
+                    break;
+            }
+            break;
+        default:
+            std::cerr << "[EdgeLab CLI] Only unweighted/weighted vertex types are supported in dispatch_types.\n";
+            break;
+    }
 }
 
 #endif // CLI_H_

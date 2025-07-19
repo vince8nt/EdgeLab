@@ -1,6 +1,7 @@
 
 #include "../src/generator.h"
 #include "../src/debug.h"
+#include "../src/cli.h"
 
 template<typename Vertex_t, typename Edge_t, GraphType Graph_t>
 class Tester {
