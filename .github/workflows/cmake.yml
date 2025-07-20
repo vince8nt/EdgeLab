@@ -21,7 +21,7 @@ jobs:
       run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 
     - name: Build
-      run: cmake --build build --config Release | tee build/build.log
+      run: cmake --build build --config Release 2>&1 | tee build/build.log
 
     - name: Check for warnings
       run: |
