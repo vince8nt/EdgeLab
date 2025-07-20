@@ -104,6 +104,24 @@ public:
     const Vertex* end() const { return vertices_ + num_vertices_; }
     vertex_ID_t ID(const Vertex* it) const { return it - vertices_; }
 
+    // printing functionality (for testing/debugging)
+    friend std::ostream& operator<<(std::ostream& os, const Graph<Vertex_t, Edge_t, Graph_t>& g) {
+        for (vertex_ID_t i = 0; i < g.num_vertices(); i++) {
+            if constexpr (WeightedVertexType<Vertex_t>)
+                os << "["<< i << " " << std::setprecision(3) << g[i].weight() << "]: ";
+            else
+                os << i << ": ";
+            for (auto &e : g[i].edges()) {
+                if constexpr (WeightedEdgeType<Edge_t>)
+                    os << "[" << e.dest() << " " << std::setprecision(3) << e.weight() << "] ";
+                else
+                    os << e.dest() << " ";
+            }
+            os << std::endl;
+        }
+        return os;
+    }
+
 private:
     const vertex_ID_t num_vertices_;
     const Vertex* vertices_;

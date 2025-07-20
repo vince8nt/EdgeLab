@@ -4,7 +4,6 @@
 #include "util.h"
 #include "graph_comp.h"
 #include "graph.cpp"
-#include "debug.h"
 
 template<typename Vertex_t, typename Edge_t, GraphType Graph_t>
 class Builder {
@@ -22,8 +21,7 @@ public:
         std::vector<vertex_ID_t> degrees;
         degrees.reserve(vg.matrix.size());
         vertex_ID_t num_edges = SortAndRemoveDuplicates(vg.matrix, degrees);
-        // Debug<Vertex_t, Edge_t, Graph_t> D;
-        // D.print(vg);
+        // std::cout << vg << std::endl;
         Graph graph = FlattenVectorGraph(num_edges, vg, degrees);
         return graph;
     }

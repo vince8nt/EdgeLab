@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <vector>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <type_traits>
 #include <algorithm>
 #include <concepts> // For std::derived_from

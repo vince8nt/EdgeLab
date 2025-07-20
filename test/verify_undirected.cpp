@@ -1,6 +1,5 @@
 
 #include "../src/generator.h"
-#include "../src/debug.h"
 #include "../src/cli.h"
 
 // program body for generalized VertexType, EdgeType, and GraphType

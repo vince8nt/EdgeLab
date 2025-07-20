@@ -7,32 +7,22 @@
 
 // Vertex (excluding ID and adjacency data)
 // Contains optional weight + mutable data
-// Mutable Data stored inplace - for large data sizes, use a reference/pointer.
+// Mutable Data stored inplace - for large data sizes, use a seperate array indexed by vertexID.
 struct VertexUW {
     using data_type = void;
     weight_t weight() const { return 1.0; }
-    // make this whole file into 1 templated class so we don't have annoying stuff like this
-    /*Graph<VertexUW, Edge_t, Graph_t>::Vertex vertex(const Edge_t* edges_begin, vertex_ID_t degree) {
-        return {edges_begin, degree};
-    }*/
 };
 template<typename Data_t>
 struct VertexUWD : public VertexUW {
     using data_type = Data_t;
     VertexUWD(Data_t data) : data_(data) {}
     Data_t &data() { return data_; }
-    /*Graph<VertexUWD, Edge_t, Graph_t>::Vertex vertex(const Edge_t* edges_begin, vertex_ID_t degree) {
-        return {data_, edges_begin, degree};
-    }*/
 protected:
     alignas(vertex_ID_t) Data_t data_;
 };
 struct VertexW : public VertexUW {
     VertexW(weight_t weight) : weight_(weight) {}
     weight_t weight() const { return weight_; }
-    /*Graph<VertexW, Edge_t, Graph_t>::Vertex vertex(const Edge_t* edges_begin, vertex_ID_t degree) {
-        return {weight_, edges_begin, degree};
-    }*/
 protected:
     const weight_t weight_;
 };
@@ -40,9 +30,6 @@ template<typename Data_t>
 struct VertexWD : public VertexUWD<Data_t> {
     VertexWD(weight_t weight, Data_t data) : VertexUWD<Data_t>(data), weight_(weight) {}
     weight_t weight() const { return weight_; }
-    /*Graph<VertexWD, Edge_t, Graph_t>::Vertex vertex(const Edge_t* edges_begin, vertex_ID_t degree) {
-        return {data_, weight_, edges_begin, degree};
-    }*/
 protected:
     const weight_t weight_;
 };
@@ -50,7 +37,7 @@ protected:
 
 // Edge (excluding sourceID)
 // Contains destination and optional weight + mutable data
-// Mutable Data stored inplace - for large data sizes, use a reference/pointer.
+// Mutable Data stored inplace - for large data sizes, use a seperate array indexed by edgeIndex.
 struct EdgeUW {
     EdgeUW(vertex_ID_t dest) : dest_(dest) {}
     using data_type = void;
@@ -124,7 +111,9 @@ template<std::derived_from<EdgeUW> Edge_t>
 using AdjacencyList = std::vector<Edge_t>;
 template<std::derived_from<EdgeUW> Edge_t>
 using AdjacencyMatrix = std::vector<AdjacencyList<Edge_t>>;
-// vector graph (vertex list + adjacency matrix)
+
+
+// Vector Graph (vertex list + adjacency matrix) (used during generation / loading)
 template<typename Vertex_t, typename Edge_t>
 struct VectorGraph;
 template<typename Vertex_t, typename Edge_t> // Specialization for EmptyVertex
@@ -132,6 +121,9 @@ template<typename Vertex_t, typename Edge_t> // Specialization for EmptyVertex
 struct VectorGraph<Vertex_t, Edge_t> {
     VectorGraph() {};
     VectorGraph(vertex_ID_t num_vertices) : matrix(AdjacencyMatrix<Edge_t>(num_vertices)) {};
+    friend std::ostream& operator<<(std::ostream& os, const VectorGraph<Vertex_t, Edge_t>& vg) {
+        return vg_to_stream(os, vg);
+    }
     AdjacencyMatrix<Edge_t> matrix;
 };
 template<typename Vertex_t, typename Edge_t> // Specialization for NonEmptyVertex
@@ -139,9 +131,34 @@ template<typename Vertex_t, typename Edge_t> // Specialization for NonEmptyVerte
 struct VectorGraph<Vertex_t, Edge_t> {
     VectorGraph() {};
     VectorGraph(vertex_ID_t num_vertices) : matrix(AdjacencyMatrix<Edge_t>(num_vertices)) {};
+    friend std::ostream& operator<<(std::ostream& os, const VectorGraph<Vertex_t, Edge_t>& vg) {
+        return vg_to_stream(os, vg);
+    }
     std::vector<Vertex_t> vertices;
     AdjacencyMatrix<Edge_t> matrix;
 };
+// printing functionality for VectorGraph
+template<typename Vertex_t, typename Edge_t>
+std::ostream& vg_to_stream(std::ostream& os, const VectorGraph<Vertex_t, Edge_t>& vg) {
+    for (vertex_ID_t i = 0; i < vg.matrix.size(); i++) {
+        if constexpr (WeightedVertexType<Vertex_t>)
+            os << "["<< i << " " << std::setprecision(3) << vg.vertices[i].weight() << "]: ";
+        else
+            os << i << ": ";
+        for (auto &e : vg.matrix[i]) {
+            if constexpr (WeightedEdgeType<Edge_t>)
+                os << "[" << e.dest() << " " << std::setprecision(3) << e.weight() << "] ";
+            else
+                os << e.dest() << " ";
+        }
+        os << std::endl;
+    }
+    return os;
+}
+
+
+
+
 
 
 
