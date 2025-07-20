@@ -6,28 +6,32 @@
 // program body for generalized VertexType, EdgeType, and GraphType
 template<typename Vertex_t, typename Edge_t, GraphType Graph_t>
 int verify_undirected(GenType gen_type, int scale, int degree) {
+    using Generator = Generator<Vertex_t, Edge_t, Graph_t>;
+    using VectorGraph = VectorGraph<Vertex_t, Edge_t>;
+    using Builder = Builder<Vertex_t, Edge_t, Graph_t>;
+    using Graph = Graph<Vertex_t, Edge_t, Graph_t>;
     if constexpr (Graph_t == GraphType::DIRECTED)
         std::cout << "warning: graph type mismatch" << std::endl;
     
     // Debug<Vertex_t, Edge_t, Graph_t> D_; // Debug for printing graph
 
     // generate edge list
-    Generator<Vertex_t, Edge_t, Graph_t> generator(gen_type, scale, degree);
-    VectorGraph<Vertex_t, Edge_t> vg = generator.Generate();
+    Generator generator(gen_type, scale, degree);
+    VectorGraph vg = generator.Generate();
     // D_.print(vg);
 
     // generaate CLI Graph
-    Builder<Vertex_t, Edge_t, Graph_t> builder;
-    Graph<Vertex_t, Edge_t, Graph_t> graph = builder.BuildGraph(vg);
+    Builder builder;
+    Graph graph = builder.BuildGraph(vg);
     // D_.print(graph);
     // D_.print_it(graph);
 
-    vertex_ID_t v_id = 0;
-    for (auto v : graph) { // TODO: find a way to get vertex ID from iterator
-        for (auto e : v.edges()) {
+    // vertex_ID_t v_id = 0;
+    for (auto *v = graph.begin(); v < graph.end(); v++) {
+        for (auto e : v->edges()) {
             
             auto dest_v = graph[e.dest()];
-            auto it = dest_v.get_edge_to(v_id);
+            auto it = dest_v.get_edge_to(graph.ID(v));
             if (it == dest_v.edges().end())
                 return 1;
             if constexpr (WeightedEdgeType<Edge_t>) {
@@ -35,7 +39,7 @@ int verify_undirected(GenType gen_type, int scale, int degree) {
                     return 1;
             }
         }
-        v_id++;
+        // v_id++;
     }
 
     return 0;

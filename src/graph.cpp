@@ -102,7 +102,7 @@ public:
     // Iterator support for vertices
     const Vertex* begin() const { return vertices_; }
     const Vertex* end() const { return vertices_ + num_vertices_; }
-
+    vertex_ID_t ID(const Vertex* it) const { return it - vertices_; }
 
 private:
     const vertex_ID_t num_vertices_;
