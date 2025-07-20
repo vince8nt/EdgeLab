@@ -11,8 +11,9 @@ class Builder {
     using AdjacencyList = AdjacencyList<Edge_t>;
     using AdjacencyMatrix = AdjacencyMatrix<Edge_t>;
     using VectorGraph = VectorGraph<Vertex_t, Edge_t>;
-    using Vertex = Vertex<Vertex_t, Edge_t>;
     using Graph = Graph<Vertex_t, Edge_t, Graph_t>;
+    using Vertex = Graph::Vertex;
+    
 
 public:
     Builder() {}
