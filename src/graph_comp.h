@@ -186,9 +186,21 @@ public:
     vertex_ID_t degree() const { return degree_; }
     Edges edges() const { return Edges(edges_begin_, degree_); }
 
+    // TODO(vince) verify that compiler optimizes edges object
     // has an edge connected to target vertex ID
-    bool connected_to(vertex_ID_t target_id) const { // may want to do lower_bound to return edge weight/data
+    bool has_edge_to(vertex_ID_t target_id) const {
         return std::binary_search(edges().begin(), edges().end(), target_id);
+    }
+    // to access edge weight/data
+    const Edge_t* get_edge_to(vertex_ID_t target_id) const {
+        auto it = std::lower_bound(edges().begin(), edges().end(), target_id,
+            [](const Edge_t& edge, vertex_ID_t target) {
+                return edge.dest() < target;
+            });
+        if (it != edges().end() and it->dest() == target_id)
+            // return &(*it);
+            return it;
+        return edges().end();
     }
 };
 

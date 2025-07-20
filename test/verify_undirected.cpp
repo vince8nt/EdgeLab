@@ -23,11 +23,16 @@ int verify_undirected(GenType gen_type, int scale, int degree) {
     // D_.print_it(graph);
 
     vertex_ID_t v_id = 0;
-    for (auto &v : graph) { // TODO: find a way to get vertex ID from iterator
-        std::cout << v_id << ": ";
+    for (auto v : graph) { // TODO: find a way to get vertex ID from iterator
         for (auto e : v.edges()) {
+            
+            auto dest_v = graph[e.dest()];
+            auto it = dest_v.get_edge_to(v_id);
+            if (it == dest_v.edges().end())
+                return 1;
             if constexpr (WeightedEdgeType<Edge_t>) {
-                // verify both directions have the same weight
+                if (it->weight() != e.weight())
+                    return 1;
             }
         }
         v_id++;
