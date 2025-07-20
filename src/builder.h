@@ -22,8 +22,8 @@ public:
         std::vector<vertex_ID_t> degrees;
         degrees.reserve(vg.matrix.size());
         vertex_ID_t num_edges = SortAndRemoveDuplicates(vg.matrix, degrees);
-        Debug<Vertex_t, Edge_t, Graph_t> D;
-        D.print(vg);
+        // Debug<Vertex_t, Edge_t, Graph_t> D;
+        // D.print(vg);
         Graph graph = FlattenVectorGraph(num_edges, vg, degrees);
         return graph;
     }
@@ -47,7 +47,7 @@ private:
                     return a.dest() == b.dest();
                 });
             // no need to resize vector now since it is inneficient
-            // adjacency_list.resize(last - adjacency_list.begin()); // sus?
+            // adjacency_list.resize(last - adjacency_list.begin());
             vertex_ID_t unique_edges = std::distance(adjacency_list.begin(), last);
             num_edges += unique_edges;
             degrees.push_back(unique_edges);
