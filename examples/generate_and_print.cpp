@@ -18,7 +18,7 @@ struct Tester {
 };
 
 int main() {
-    Tester<VertexUW, EdgeW, GraphType::UNDIRECTED> tester;
+    Tester<VertexUW, EdgeUW, GraphType::UNDIRECTED> tester;
     tester.run_test(GenType::ERDOS_RENYI, 4, 2);
 }
 
