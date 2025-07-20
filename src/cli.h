@@ -9,20 +9,6 @@
 #include "graph_comp.h"
 #include "generator.h" // for GenType
 
-// Forward declarations for custom types (replace with actual includes in your main file)
-struct VertexUW;
-struct VertexW;
-template<typename T> struct VertexUWD;
-template<typename T> struct VertexWD;
-struct EdgeUW;
-struct EdgeW;
-template<typename T> struct EdgeUWD;
-template<typename T> struct EdgeWD;
-enum class GraphType;
-template<NonDataVertexType V, NonDataEdgeType E, GraphType G> class Generator;
-template<typename V, typename E, GraphType G> class Builder;
-template<typename V, typename E, GraphType G> class Graph;
-template<typename V, typename E> struct VectorGraph;
 
 // Enum definitions for CLI
 enum class CLIVertexType {
