@@ -1,189 +1,140 @@
 # EdgeLab
 
-A high-performance C++20 graph library for efficient graph generation, manipulation, and analysis with support for both directed and undirected graphs, weighted/unweighted vertices and edges, and custom data storage.
+A high-performance C++20 graph library for efficient graph generation, manipulation, and analysis, supporting both directed and undirected graphs, weighted/unweighted vertices and edges, and custom data storage.
+
+---
 
 ## 🚀 Features
 
-- **Flexible Graph Types**: Support for both directed and undirected graphs
-- **Weighted & Unweighted Components**: Vertices and edges can be weighted or unweighted
-- **Custom Data Storage**: Extensible data storage for vertices and edges
-- **Multiple Graph Generators**: Built-in generators for common graph types
-- **Efficient CSR Format**: Compressed Sparse Row (CSR) representation for memory efficiency
-- **Modern C++20**: Uses concepts, templates, and other modern C++ features
-- **Type Safety**: Strong type system with compile-time guarantees
+- **Flexible Graph Types:** Directed and undirected graphs
+- **Weighted & Unweighted Components:** Vertices and edges can be weighted or unweighted
+- **Custom Data Storage:** Extensible data storage for vertices and edges
+- **Multiple Graph Generators:** Built-in generators for common graph types
+- **Efficient CSR Format:** Compressed Sparse Row (CSR) representation for memory efficiency
+- **Modern C++20:** Concepts, templates, and other modern C++ features
+- **Type Safety:** Strong type system with compile-time guarantees
+- **CLI & Automated Testing:** Command-line interface for graph configuration and GitHub Actions for CI
+
+---
 
 ## 📁 Project Structure
 
 ```
 EdgeLab/
 ├── src/
-│   ├── util.h          # Core type definitions and utilities
-│   ├── graph_comp.h    # Graph components (vertices, edges, concepts)
-│   ├── generator.h     # Graph generation algorithms
-│   ├── builder.h       # Graph construction and CSR conversion
-│   ├── graph.cpp       # Graph class implementation
-│   └── debug.h         # Debugging and visualization utilities
+│   ├── util.h
+│   ├── graph_comp.h
+│   ├── generator.h
+│   ├── builder.h
+│   ├── graph.cpp
+│   ├── cli.h
+│   └── cli_dispatch.h
 ├── test/
-│   └── test.cpp        # Example usage and testing
-└── README.MD           # This file
+│   ├── iteration.cpp
+│   └── verify_undirected.cpp
+├── examples/
+│   ├── triangle_counting.cpp
+│   └── breadth_first_search.cpp
+├── .github/
+│   └── workflows/
+│       └── cmake.yml
+├── CMakeLists.txt
+└── README.MD
 ```
 
-## 🏗️ Architecture
+---
 
-### Core Components
+## 🏗️ Architecture & API
 
-#### Vertex Types
-- `VertexUW` - Unweighted vertex with no data
-- `VertexW` - Weighted vertex
-- `VertexUWD<Data_t>` - Unweighted vertex with custom data
-- `VertexWD<Data_t>` - Weighted vertex with custom data
+### Core Graph API
 
-#### Edge Types
-- `EdgeUW` - Unweighted edge
-- `EdgeW` - Weighted edge
-- `EdgeUWD<Data_t>` - Unweighted edge with custom data
-- `EdgeWD<Data_t>` - Weighted edge with custom data
+- **Graph**: Now exposes a `VertexRef` type for user access, which is directly iterable for edge traversal.
+- **VertexRef**: Used for all vertex access and iteration; edges are accessed directly via range-based for loops.
+- **Graph Printing**: The graph can be printed directly to a stream using the `<<` operator.
+- **No `.edges()` method**: Edges are accessed directly from `VertexRef` (e.g., `for (auto& edge : graph[u_id])`).
 
-#### Graph Types
-- `GraphType::DIRECTED` - Directed graph
-- `GraphType::UNDIRECTED` - Undirected graph
+### CLI & Dispatch
 
-### Graph Generation
+- **CLI (src/cli.h):** Command-line interface for specifying graph type, vertex/edge type, scale, degree, and generator type.
+- **Dispatching (src/cli_dispatch.h):** Generic dispatch system for instantiating template classes (e.g., `Tester`, BFS, triangle counting) based on CLI options.
 
-Currently supports:
-- **Erdős-Rényi** - Random graph generation
-- **Watts-Strogatz** - Small-world network generation (planned)
-- **Barabási-Albert** - Scale-free network generation (planned)
+### Algorithms
+
+- **Triangle Counting:** Efficient triangle counting using neighbor intersection, with correct handling for undirected graphs.
+- **Breadth-First Search:** BFS implemented using the new `VertexRef` API, returning the shortest path distance or throwing if unreachable.
+
+### Automated Testing
+
+- **GitHub Actions:** Workflow in `.github/workflows/cmake.yml` builds the project with CMake, fails on warnings, and runs all test binaries.
+- **CMake:** Builds all test and example executables.
+
+---
 
 ## 🛠️ Building and Usage
 
 ### Prerequisites
-- C++20 compatible compiler (GCC 10+, Clang 12+, MSVC 2019+)
-- CMake 3.16+ (optional, for build system)
 
-### Quick Start
+- C++20 compatible compiler (GCC 10+, Clang 12+, MSVC 2019+)
+- CMake 3.16+ (for build system)
+
+### Build & Run
 
 ```bash
-# Compile the test program
-g++ -std=c++20 -I. test/test.cpp -o test_program
-
-# Run the example
+mkdir build
+cd build
+cmake ..
+cmake --build .
+# Run any of the compiled binaries, e.g.:
 ./test_program
+./verify_undirected
 ```
 
-### Basic Usage
+### Command-Line Interface
 
-```cpp
-#include "src/generator.h"
-#include "src/builder.h"
-#include "src/debug.h"
+You can configure and run graph generation and algorithms via CLI:
 
-// Create a weighted undirected graph
-using MyGraph = Graph<VertexW, EdgeW, GraphType::UNDIRECTED>;
-
-// Generate a random graph
-Generator<VertexW, EdgeW, GraphType::UNDIRECTED> generator(
-    GenType::ERDOS_RENYI,  // Graph type
-    4,                     // Scale (2^4 = 16 vertices)
-    2                      // Average degree
-);
-
-VectorGraph<VertexW, EdgeW> vg = generator.Generate();
-
-// Build the final graph in CSR format
-Builder<VertexW, EdgeW, GraphType::UNDIRECTED> builder;
-MyGraph graph = builder.BuildGraph(vg);
+```bash
+./verify_undirected --graph-type undirected --vertex-type unweighted --edge-type unweighted --scale 10 --degree 3 --gen-type erdos_renyi
 ```
 
-## 📊 Graph Representations
-
-### Vector Graph (Input Format)
-- Adjacency matrix representation
-- Suitable for graph generation and loading
-- Supports dynamic edge addition
-
-### CSR Graph (Output Format)
-- Compressed Sparse Row format
-- Memory efficient for large sparse graphs
-- Fast neighbor iteration
-- Immutable after construction
+---
 
 ## 🔧 Advanced Usage
 
 ### Custom Data Types
 
 ```cpp
-// Define custom vertex data
-struct VertexData {
-    std::string name;
-    int priority;
-};
-
-// Define custom edge data
-struct EdgeData {
-    std::string label;
-    double reliability;
-};
-
-// Use with custom data
+struct VertexData { std::string name; int priority; };
+struct EdgeData { std::string label; double reliability; };
 using CustomGraph = Graph<VertexWD<VertexData>, EdgeWD<EdgeData>, GraphType::DIRECTED>;
 ```
 
 ### Graph Traversal
 
 ```cpp
-// Iterate over vertices
-for (const auto& vertex : graph) {
-    std::cout << "Vertex degree: " << vertex.degree() << std::endl;
-    
-    // Iterate over edges
-    for (const auto& edge : vertex.edges()) {
-        std::cout << "Edge to: " << edge.dest() 
-                  << " Weight: " << edge.weight() << std::endl;
+for (vertex_ID_t u = 0; u < graph.num_vertices(); ++u) {
+    for (const auto& edge : graph[u]) {
+        // edge.dest(), edge.weight(), etc.
     }
 }
 ```
 
-### Undirected Graph Handling
+---
 
-For undirected graphs, the library enforces a specific convention:
-- Only add edges where `src <= dest`
-- The builder automatically adds inverse edges
-- This ensures consistent weight handling for weighted graphs
+## 🧪 Testing & CI
 
-## 🧪 Testing
+- **Automated CI:** GitHub Actions workflow builds and tests all binaries, fails on warnings, and checks exit codes.
+- **Test Programs:** `iteration.cpp`, `verify_undirected.cpp`, and algorithm examples.
 
-The test suite demonstrates various graph configurations:
-
-```cpp
-// Test different vertex/edge combinations
-Tester<VertexUW, EdgeW, GraphType::UNDIRECTED> tester1;  // Unweighted vertices, weighted edges
-Tester<VertexW, EdgeUW, GraphType::DIRECTED> tester2;    // Weighted vertices, unweighted edges
-Tester<VertexW, EdgeW, GraphType::UNDIRECTED> tester3;   // Both weighted
-```
-
-## 🔍 Debugging and Visualization
-
-The `Debug` class provides utilities for graph inspection:
-
-```cpp
-Debug<VertexW, EdgeW> debug;
-
-// Print adjacency matrix representation
-debug.print(vg);
-
-// Print CSR graph representation
-debug.print_graph(graph);
-
-// Print with iterators
-debug.print_graph_it(graph);
-```
+---
 
 ## 🚧 Current Limitations
 
-- Move assignment operators are not supported for edge/vertex classes with const members
-- Some graph generation algorithms are planned but not yet implemented
-- Limited graph analysis algorithms (focus is on generation and representation)
+- Move assignment operators are not supported for edge/vertex classes with `const` members.
+- Some graph generation algorithms (e.g., Watts-Strogatz) are planned but not yet implemented.
+- Only unweighted/weighted (not data-carrying) types are fully supported in the CLI dispatch system.
+
+---
 
 ## 🔮 Future Enhancements
 
@@ -193,17 +144,23 @@ debug.print_graph_it(graph);
 - [ ] Parallel graph processing
 - [ ] Memory pool optimization for large graphs
 
+---
+
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Submit a pull request
+1. Fork the repository.
+2. Create a feature branch.
+3. Make your changes.
+4. Add tests for new functionality.
+5. Submit a pull request.
+
+---
 
 ## 📄 License
 
 [Add your license information here]
+
+---
 
 ## 📞 Support
 
