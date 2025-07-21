@@ -19,7 +19,7 @@ int test_iteration(GenType gen_type, int scale, int degree) {
 
     // check that Graph iterators are consistent with indexing
     vertex_ID_t v_index = 0;
-    for (auto *v = graph.begin(); v < graph.end(); v++) {
+    for (auto v = graph.begin(); v != graph.end(); v++) {
         if (v_index >= graph.num_vertices()) {
             std::cerr << "Error: Vertex index " << v_index << " out of range" << std::endl;
             return 1;
@@ -28,21 +28,20 @@ int test_iteration(GenType gen_type, int scale, int degree) {
             std::cerr << "Error: ID mismatch [" << v_index << ", " << graph.ID(v) << "]" << std::endl;
             return 1;
         }
-        auto edges = v->edges();
         vertex_ID_t e_index = 0;
-        for (auto & e : edges) {
-            if (e_index >= edges.size()) {
+        for (auto & e : v) {
+            if (e_index >= v.degree()) {
                 std::cerr << "Error: Edge index " << e_index << " out of range for vertex " << v_index << std::endl;
                 return 1;
             }
-            if (e.dest() != edges[e_index].dest()) {
-                std::cerr << "Error: Edge mismatch [" << v_index << "->" << edges[e_index].dest()
+            if (e.dest() != v[e_index].dest()) {
+                std::cerr << "Error: Edge mismatch [" << v_index << "->" << v[e_index].dest()
                     << "], [" << v_index << "->" << e.dest() << std::endl;
                 return 1;
             }
             e_index++;
         }
-        if (e_index != edges.size()) {
+        if (e_index != v.degree()) {
             std::cerr << "Error: Edge index " << e_index << " not at size for vertex " << v_index << std::endl;
             return 1;
         }

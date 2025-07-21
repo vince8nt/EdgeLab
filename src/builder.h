@@ -64,22 +64,29 @@ private:
 
     // create CSR
     Graph FlattenVectorGraph(vertex_ID_t num_edges, VectorGraph &vg, std::vector<vertex_ID_t> &degrees) {
-        Vertex* vertices = (Vertex*)malloc(vg.matrix.size() * sizeof(Vertex));
+        Vertex* vertices = (Vertex*)malloc((vg.matrix.size() + 1) * sizeof(Vertex));
         Edge_t* edges = (Edge_t*)malloc(num_edges * sizeof(Edge_t));
 
         edge_ID_t edges_index = 0;
-        for (vertex_ID_t vertex_id = 0; vertex_id < vg.matrix.size(); vertex_id++) {
-            // new (&vertices[vertex_id]) Vertex(vg.vertices[vertex_id], edges + edges_index, vg.matrix[vertex_id].size());
+        vertex_ID_t vertex_id = 0;
+        for (; vertex_id < vg.matrix.size(); vertex_id++) {
             auto edges_begin = edges + edges_index;
             vertex_ID_t degree = degrees[vertex_id];
             if constexpr (EmptyVertexType<Vertex_t>)
-                new (&vertices[vertex_id]) Vertex(edges_begin, degree);
+                new (&vertices[vertex_id]) Vertex(edges_begin);
             else   
-                new (&vertices[vertex_id]) Vertex(vg.vertices[vertex_id], edges_begin, degree);
-            for (vertex_ID_t i = 0; i < degrees[vertex_id]; i++) {
+                new (&vertices[vertex_id]) Vertex(vg.vertices[vertex_id], edges_begin);
+            for (vertex_ID_t i = 0; i < degree; i++) {
                 edges[edges_index++] = vg.matrix[vertex_id][i];
             }
         }
+
+        // end vertex
+        auto edges_begin = edges + edges_index;
+        if constexpr (EmptyVertexType<Vertex_t>)
+            new (&vertices[vertex_id]) Vertex(edges_begin);
+        else
+            new (&vertices[vertex_id]) Vertex(Vertex_t(), edges_begin);
 
         return Graph(vg.matrix.size(), vertices, num_edges, edges);
     }

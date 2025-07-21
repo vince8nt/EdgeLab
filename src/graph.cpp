@@ -11,62 +11,80 @@ class Graph {
 
 public:
 
-    // Edges used to iterate through flattened CSR Graph
-    struct Edges {
-    private:
-        const vertex_ID_t size_;
-        const Edge_t* begin_;
-        const Edge_t* end_;
-    public:
-        Edges(const Edge_t* edges_begin, vertex_ID_t size) :
-            size_(size), begin_(edges_begin), end_(edges_begin + size) {}
-        
-        // getters
-        vertex_ID_t size() const { return size_; }
-        Edge_t operator[](vertex_ID_t i) const { return begin_[i]; }
+    // Vertex used in flattened CSR Graph
+    // Todo (maybe move this to generator class)
+    struct Vertex : public Vertex_t {
+        // For empty vertex - relies on Empty Base Class Optimization (EBCO)
+        Vertex(const Edge_t* edges_begin) requires EmptyVertexType<Vertex_t> :
+                edges_begin_(edges_begin) {}
 
-        // Iterator support for edges
-        const Edge_t* begin() const { return begin_; }
-        const Edge_t* end() const { return end_; }
+        // For non empty vertex
+        Vertex(const Vertex_t& vertex, const Edge_t* edges_begin)
+                requires NonEmptyVertexType<Vertex_t> :
+                Vertex_t(vertex), edges_begin_(edges_begin) {}
+
+        // starting location of our outgoing edges in graph's edges_ array
+        const Edge_t* edges_begin_; // requires EmptyVertexType<Vertex_t>;
+        // alignas(vertex_ID_t) const Edge_t* edges_begin_ requires NonEmptyVertexType<Vertex_t>;
+        // TODO(vince): ensure dense packing of Vertex attributes
     };
 
 
-    // Vertex used in flattened CSR Graph
-    struct Vertex : public Vertex_t {
-    private:
-        alignas(vertex_ID_t) const Edge_t* edges_begin_;
-        const vertex_ID_t degree_;
-    public:
-        // For empty vertex - relies on Empty Base Class Optimization (EBCO)
-        Vertex(const Edge_t* edges_begin, vertex_ID_t degree) requires EmptyVertexType<Vertex_t> :
-                edges_begin_(edges_begin), degree_(degree) {}
+    // Vertex wrapper exposed to user (A single Vertex Pointer)
+    struct VertexRef {
+        // TODO(vince): find a more elagant way to do this
+        Vertex* csr_loc_; // only for use within Graph class
 
-        // For non empty vertex
-        Vertex(const Vertex_t& vertex, const Edge_t* edges_begin, vertex_ID_t degree)
-                requires NonEmptyVertexType<Vertex_t> :
-                Vertex_t(vertex), edges_begin_(edges_begin), degree_(degree) {}
+        // VertexRef(Vertex* csr_loc) : csr_loc_(csr_loc) {}
+        VertexRef(const Vertex* csr_loc) : csr_loc_(const_cast<Vertex*>(csr_loc)) {}
 
-        // getters - also includes weight() and optionally data()
-        vertex_ID_t degree() const { return degree_; }
-        Edges edges() const { return Edges(edges_begin_, degree_); }
+        // Vertex iteration support
+        // bool operator==(Vertex* csr_loc) const { return csr_loc == csr_loc_; } // kinda jank
+        bool operator==(VertexRef vr) const {return vr.csr_loc_ == csr_loc_; }          // kinda jank
+        VertexRef operator+(std::ptrdiff_t n) const { return {csr_loc_ + n}; }
+        VertexRef operator++(int) { VertexRef temp = *this; csr_loc_++; return temp; } // Postfix Increment
+        VertexRef& operator++() { csr_loc_++; return *this; } // Prefix Increment
+        VertexRef& operator+=(std::ptrdiff_t n) { csr_loc_ += n; return *this; }
+        VertexRef operator-(std::ptrdiff_t n) const { return {csr_loc_ - n}; }
+        VertexRef operator--(int) { VertexRef temp = *this; csr_loc_--; return temp; } // Postfix Decrement
+        VertexRef& operator--() { csr_loc_--; return *this; } // Prefix Decrement
+        VertexRef& operator-=(std::ptrdiff_t n) { csr_loc_ -= n; return *this; }
 
-        // TODO(vince) verify that compiler optimizes edges object
-        // has an edge connected to target vertex ID
+        // get Vertex ID (kinda annoying that we need to pass in graph)
+        vertex_ID_t ID(Graph &graph) const { return csr_loc_ - graph.begin().csr_loc_; }
+        // vertex_ID_t ID() const { return csr_loc_ - vertices_; } // doesn't have access to nonstatic Graph vars
+
+        // Edge iteration support
+        const Edge_t* begin() const { return csr_loc_->edges_begin_; }
+        const Edge_t* end() const { return (csr_loc_ + 1)->edges_begin_; }
+
+        // Edge indexing support
+        vertex_ID_t degree() const { return end() - begin(); }
+        Edge_t operator[](vertex_ID_t i) const { return begin()[i]; }
+
+        // Edge lookup support
         bool has_edge_to(vertex_ID_t target_id) const {
-            return std::binary_search(edges().begin(), edges().end(), target_id);
+            return std::binary_search(begin(), end(), target_id,
+            [](const Edge_t& edge, vertex_ID_t target) {
+                return edge.dest() < target;
+            });
         }
-        // to access edge weight/data
         const Edge_t* get_edge_to(vertex_ID_t target_id) const {
-            auto it = std::lower_bound(edges().begin(), edges().end(), target_id,
+            auto it = std::lower_bound(begin(), end(), target_id,
                 [](const Edge_t& edge, vertex_ID_t target) {
                     return edge.dest() < target;
                 });
-            if (it != edges().end() and it->dest() == target_id)
-                // return &(*it);
+            if (it != end() and it->dest() == target_id)
                 return it;
-            return edges().end();
+            return end();
         }
+
+        // Vertex functionality support
+        weight_t weight() const { return csr_loc_->weight(); }
+        Vertex::data_type data() const requires DataVertexType<Vertex>
+            { return csr_loc_->data(); }
     };
+
 
     // constructors / destructor
     Graph(vertex_ID_t num_vertices, Vertex* vertices, edge_ID_t num_edges, Edge_t* edges) :
@@ -95,14 +113,17 @@ public:
         else
             return num_edges_;
     }
-    vertex_ID_t num_vertices() const { return num_vertices_; }
-    const Vertex& operator[](vertex_ID_t i) const { return vertices_[i]; }
 
+    // indexing suport for vertices
+    vertex_ID_t num_vertices() const { return num_vertices_; }
+    const VertexRef operator[](vertex_ID_t i) const { return VertexRef(vertices_ + i); }
 
     // Iterator support for vertices
-    const Vertex* begin() const { return vertices_; }
-    const Vertex* end() const { return vertices_ + num_vertices_; }
-    vertex_ID_t ID(const Vertex* it) const { return it - vertices_; }
+    const VertexRef begin() const { return VertexRef(vertices_); }
+    const VertexRef end() const { return VertexRef(vertices_ + num_vertices_); }
+
+    // get Vertex ID (kinda annoying that it needs to be called from graph)
+    vertex_ID_t ID(const VertexRef vr) { return vr.csr_loc_ - vertices_; }
 
     // printing functionality (for testing/debugging)
     friend std::ostream& operator<<(std::ostream& os, const Graph<Vertex_t, Edge_t, Graph_t>& g) {
@@ -111,7 +132,7 @@ public:
                 os << "["<< i << " " << std::setprecision(3) << g[i].weight() << "]: ";
             else
                 os << i << ": ";
-            for (auto &e : g[i].edges()) {
+            for (auto &e : g[i]) {
                 if constexpr (WeightedEdgeType<Edge_t>)
                     os << "[" << e.dest() << " " << std::setprecision(3) << e.weight() << "] ";
                 else

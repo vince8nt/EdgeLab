@@ -22,11 +22,11 @@ int verify_undirected(GenType gen_type, int scale, int degree) {
     Graph graph = builder.BuildGraph(vg);
 
     for (vertex_ID_t v_id = 0; v_id < graph.num_vertices(); v_id++) {
-        for (auto e : graph[v_id].edges()) {
+        for (auto e : graph[v_id]) {
 
             auto dest_v = graph[e.dest()];
             auto it = dest_v.get_edge_to(v_id);
-            if (it == dest_v.edges().end()) {
+            if (it == dest_v.end()) {
                 std::cerr << "Error: No inverse of Edge ["
                     << v_id << "->" << e.dest() << "]" << std::endl;
                 return 1;

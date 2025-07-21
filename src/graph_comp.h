@@ -15,12 +15,14 @@ struct VertexUW {
 template<typename Data_t>
 struct VertexUWD : public VertexUW {
     using data_type = Data_t;
+    VertexUWD() : data_(Data_t()) {} // default for builder
     VertexUWD(Data_t data) : data_(data) {}
     Data_t &data() { return data_; }
 protected:
     alignas(vertex_ID_t) Data_t data_;
 };
 struct VertexW : public VertexUW {
+    VertexW() : weight_(0.0) {} // default for builder
     VertexW(weight_t weight) : weight_(weight) {}
     weight_t weight() const { return weight_; }
 protected:
@@ -28,6 +30,7 @@ protected:
 };
 template<typename Data_t>
 struct VertexWD : public VertexUWD<Data_t> {
+    VertexWD() : VertexUWD<Data_t>(), weight_(0.0) {} // default for builder
     VertexWD(weight_t weight, Data_t data) : VertexUWD<Data_t>(data), weight_(weight) {}
     weight_t weight() const { return weight_; }
 protected:
