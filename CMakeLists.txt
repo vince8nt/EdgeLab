@@ -9,6 +9,7 @@ include_directories(${CMAKE_SOURCE_DIR}/src)
 
 # Add example executables
 add_executable(generate_and_print examples/generate_and_print.cpp)
+add_executable(tc examples/triangle_counting.cpp)
 
 # Add test executables
 add_executable(verify_undirected test/verify_undirected.cpp)
