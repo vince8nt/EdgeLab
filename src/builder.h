@@ -3,7 +3,7 @@
 
 #include "util.h"
 #include "graph_comp.h"
-#include "graph.cpp"
+#include "graph.h"
 
 template<typename Vertex_t, typename Edge_t, GraphType Graph_t>
 class Builder {
