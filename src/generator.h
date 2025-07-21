@@ -14,7 +14,6 @@ enum class GenType {
 
 template<NonDataVertexType Vertex_t, NonDataEdgeType Edge_t, GraphType Graph_t>
 class Generator {
-    using VectorGraph = VectorGraph<Vertex_t, Edge_t>;
 public:
     Generator(GenType gen_type, int scale, int degree) :
             gen_type_(gen_type), scale_(scale), degree_(degree),
@@ -22,7 +21,7 @@ public:
             num_edges_(static_cast<edge_ID_t>(num_vertices_) * degree) {
     }
 
-    VectorGraph Generate() {
+    VectorGraph<Vertex_t, Edge_t> Generate() {
         switch (gen_type_) {
             case GenType::ERDOS_RENYI:
                 return GenerateErdosRenyi();
@@ -36,12 +35,12 @@ public:
     }
 
 private:
-    VectorGraph GenerateErdosRenyi() {
+    VectorGraph<Vertex_t, Edge_t> GenerateErdosRenyi() {
         std::mt19937 gen;
         gen.seed(seed_);
         std::uniform_int_distribution<vertex_ID_t> vertex_dist(0, num_vertices_ - 1);
         std::uniform_real_distribution<weight_t> weight_dist(0.0, 2.0);
-        VectorGraph vg(num_vertices_);
+        VectorGraph<Vertex_t, Edge_t> vg(num_vertices_);
 
         // generate random edges
         auto &matrix = vg.matrix;

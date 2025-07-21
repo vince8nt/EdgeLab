@@ -7,35 +7,30 @@
 
 template<typename Vertex_t, typename Edge_t, GraphType Graph_t>
 class Builder {
-    using AdjacencyList = AdjacencyList<Edge_t>;
-    using AdjacencyMatrix = AdjacencyMatrix<Edge_t>;
-    using VectorGraph = VectorGraph<Vertex_t, Edge_t>;
-    using Graph = Graph<Vertex_t, Edge_t, Graph_t>;
-    using Vertex = Graph::Vertex;
-    
+    using Vertex = Graph<Vertex_t, Edge_t, Graph_t>::Vertex;
 
 public:
     Builder() {}
 
-    Graph BuildGraph(VectorGraph &vg) {
+    Graph<Vertex_t, Edge_t, Graph_t> BuildGraph(VectorGraph<Vertex_t, Edge_t> &vg) {
         std::vector<vertex_ID_t> degrees;
         degrees.reserve(vg.matrix.size());
         vertex_ID_t num_edges = SortAndRemoveDuplicates(vg.matrix, degrees);
         // std::cout << vg << std::endl;
-        Graph graph = FlattenVectorGraph(num_edges, vg, degrees);
-        return graph;
+        Graph<Vertex_t, Edge_t, Graph_t> g = FlattenVectorGraph(num_edges, vg, degrees);
+        // std::cout << g << std::endl;
+        return g;
     }
 
 private:
 
-
     // sort and remove duplicate edges (put at end) from AdjacencyMatrix
     // for duplicate edges with different weights/IDs, this is non-deterministic
-    edge_ID_t SortAndRemoveDuplicates(AdjacencyMatrix &adjacency_matrix,
+    edge_ID_t SortAndRemoveDuplicates(AdjacencyMatrix<Edge_t> &adjacency_matrix,
             std::vector<vertex_ID_t> &degrees) {
         edge_ID_t num_edges = 0;
         for (vertex_ID_t vertex_id = 0; vertex_id < adjacency_matrix.size(); vertex_id++) {
-            AdjacencyList &adjacency_list = adjacency_matrix[vertex_id];
+            AdjacencyList<Edge_t> &adjacency_list = adjacency_matrix[vertex_id];
             std::sort(adjacency_list.begin(), adjacency_list.end(),
                 [](const Edge_t &a, const Edge_t &b) {
                     return a.dest() < b.dest();
@@ -63,7 +58,8 @@ private:
     }
 
     // create CSR
-    Graph FlattenVectorGraph(vertex_ID_t num_edges, VectorGraph &vg, std::vector<vertex_ID_t> &degrees) {
+    Graph<Vertex_t, Edge_t, Graph_t> FlattenVectorGraph(vertex_ID_t num_edges,
+            VectorGraph<Vertex_t, Edge_t> &vg, std::vector<vertex_ID_t> &degrees) {
         Vertex* vertices = (Vertex*)malloc((vg.matrix.size() + 1) * sizeof(Vertex));
         Edge_t* edges = (Edge_t*)malloc(num_edges * sizeof(Edge_t));
 
@@ -88,7 +84,7 @@ private:
         else
             new (&vertices[vertex_id]) Vertex(Vertex_t(), edges_begin);
 
-        return Graph(vg.matrix.size(), vertices, num_edges, edges);
+        return Graph<Vertex_t, Edge_t, Graph_t>(vg.matrix.size(), vertices, num_edges, edges);
     }
 
 
