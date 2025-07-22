@@ -13,12 +13,25 @@ public:
     Builder() {}
 
     Graph<Vertex_t, Edge_t, Graph_t> BuildGraph(VectorGraph<Vertex_t, Edge_t> &vg) {
+        std::cout << "Building " << Graph_t << " graph with "
+            << vg.matrix.size() << " vertices" << std::endl;
+        auto timer = timer_start();
+
+        // sort, remove duplictes, and create inverse edges(if undirected)
         std::vector<vertex_ID_t> degrees;
         degrees.reserve(vg.matrix.size());
         vertex_ID_t num_edges = SortAndRemoveDuplicates(vg.matrix, degrees);
         // std::cout << vg << std::endl;
+        std::cout << "  - Sorting + Correcting " << Graph_t << " Vector Graph: "
+            << timer_stop(timer) << " seconds" << std::endl;
+
+        // create CSR Graph
         Graph<Vertex_t, Edge_t, Graph_t> g = FlattenVectorGraph(num_edges, vg, degrees);
         // std::cout << g << std::endl;
+        auto time = timer_stop(timer);
+        std::cout << "  - Total Graph(" << vg.matrix.size() << " vertices, " << num_edges
+            << " edges) build time: " << time << " seconds" << std::endl;
+
         return g;
     }
 

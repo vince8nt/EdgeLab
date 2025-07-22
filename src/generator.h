@@ -11,6 +11,23 @@ enum class GenType {
     WATTS_STROGATZ,  // Watts-Strogatz
     BARABASI_ALBERT, // Barabasi-Albert
 };
+std::ostream& operator<<(std::ostream& os, GenType Gen_t) {
+    switch (Gen_t) {
+        case GenType::ERDOS_RENYI:
+            os << "Erdos-Renyi";
+            break;
+        case GenType::WATTS_STROGATZ:
+            os << "Watts-Strogatz";
+            break;
+        case GenType::BARABASI_ALBERT:
+            os << "Barabasi-Albert";
+            break;
+        default:
+            os << "Unknown Generation Type";
+            break;
+    }
+    return os;
+}
 
 template<NonDataVertexType Vertex_t, NonDataEdgeType Edge_t, GraphType Graph_t>
 class Generator {
@@ -22,16 +39,27 @@ public:
     }
 
     VectorGraph<Vertex_t, Edge_t> Generate() {
+        std::cout << "Generating " << Graph_t << " " << gen_type_ << " graph: "
+            << scale_ << " degree: " << degree_ << std::endl;
+        auto timer = timer_start();
+
+        VectorGraph<Vertex_t, Edge_t> vg;
         switch (gen_type_) {
             case GenType::ERDOS_RENYI:
-                return GenerateErdosRenyi();
+                vg = GenerateErdosRenyi();
+                break;
             case GenType::WATTS_STROGATZ:
                 break;
             case GenType::BARABASI_ALBERT:
                 break;
+            default:
+                std::cout << "Defaulting to Erdos-Renyi" << std::endl;
+                vg = GenerateErdosRenyi();
         }
-        std::cout << "Defaulting to Erdos-Renyi" << std::endl;
-        return GenerateErdosRenyi();
+
+        auto time = timer_stop(timer);
+        std::cout << "  - Vector Graph generation time: " << time << " seconds" << std::endl;
+        return vg;
     }
 
 private:
@@ -80,7 +108,6 @@ private:
             }
         }
 
-        std::cout << "generation finished" << std::endl;
         return vg;
     }
 
