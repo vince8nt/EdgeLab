@@ -42,3 +42,7 @@ jobs:
       run: |
         ./build/verify_undirected --edge-type unweighted --scale 8 --degree 8 --gen-type erdos_renyi
         ./build/verify_undirected --edge-type weighted --scale 8 --degree 8 --gen-type erdos_renyi
+
+    - name: Run dense packing check
+      run: |
+        ./build/verify_packing

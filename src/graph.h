@@ -13,6 +13,7 @@ public:
 
     // Vertex used in flattened CSR Graph
     // Todo (maybe move this to generator class)
+    #pragma pack (push, 4)
     struct Vertex : public Vertex_t {
         // For empty vertex - relies on Empty Base Class Optimization (EBCO)
         Vertex(const Edge_t* edges_begin) requires EmptyVertexType<Vertex_t> :
@@ -28,6 +29,7 @@ public:
         // alignas(vertex_ID_t) const Edge_t* edges_begin_ requires NonEmptyVertexType<Vertex_t>;
         // TODO(vince): ensure dense packing of Vertex attributes
     };
+    #pragma pack (pop)
 
 
     // Vertex wrapper exposed to user (A single Vertex Pointer)

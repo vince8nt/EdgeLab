@@ -5,6 +5,9 @@
 #include "util.h"
 
 
+
+
+
 // Vertex (excluding ID and adjacency data)
 // Contains optional weight + mutable data
 // Mutable Data stored inplace - for large data sizes, use a seperate array indexed by vertexID.
@@ -12,6 +15,7 @@ struct VertexUW {
     using data_type = void;
     weight_t weight() const { return 1.0; }
 };
+#pragma pack (push, 4)
 template<typename Data_t>
 struct VertexUWD : public VertexUW {
     using data_type = Data_t;
@@ -19,7 +23,7 @@ struct VertexUWD : public VertexUW {
     VertexUWD(Data_t data) : data_(data) {}
     Data_t &data() { return data_; }
 protected:
-    alignas(vertex_ID_t) Data_t data_;
+    Data_t data_;
 };
 struct VertexW : public VertexUW {
     VertexW() : weight_(0.0) {} // default for builder
@@ -36,6 +40,7 @@ struct VertexWD : public VertexUWD<Data_t> {
 protected:
     const weight_t weight_;
 };
+#pragma pack (pop)
 
 
 // Edge (excluding sourceID)
@@ -50,6 +55,7 @@ struct EdgeUW {
 protected:
     vertex_ID_t dest_;    
 };
+#pragma pack (push, 4)
 template<typename Data_t>
 struct EdgeUWD : public EdgeUW {
     EdgeUWD(vertex_ID_t dest, Data_t data) : EdgeUW(dest), data_(data) {}
@@ -57,8 +63,9 @@ struct EdgeUWD : public EdgeUW {
     Data_t &data() { return data_; }
     EdgeUWD inverse(vertex_ID_t src) const { return(EdgeUWD(src, data_)); }
 protected:
-    alignas(vertex_ID_t) Data_t data_;
+    Data_t data_;
 };
+#pragma pack (pop)
 struct EdgeW : public EdgeUW {
     EdgeW(vertex_ID_t dest, weight_t weight) : EdgeUW(dest), weight_(weight) {}
     weight_t weight() const { return weight_; }
@@ -66,6 +73,7 @@ struct EdgeW : public EdgeUW {
 protected:
     weight_t weight_;
 };
+#pragma pack (push, 4)
 template<typename Data_t>
 struct EdgeWD : public EdgeUWD<Data_t> {
     EdgeWD(vertex_ID_t dest, weight_t weight, Data_t data) :
@@ -75,6 +83,7 @@ struct EdgeWD : public EdgeUWD<Data_t> {
 protected:
     weight_t weight_;
 };
+#pragma pack (pop)
 
 
 // Vertex concepts

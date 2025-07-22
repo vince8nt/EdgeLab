@@ -15,6 +15,7 @@ add_executable(bfs examples/breadth_first_search.cpp)
 # Add test executables
 add_executable(verify_undirected test/verify_undirected.cpp)
 add_executable(iteration test/iteration.cpp)
+add_executable(packing test/vertex_edge_packing.cpp)
 
 # Optionally, set warnings
 foreach(target generate_and_print verify_undirected iteration)
