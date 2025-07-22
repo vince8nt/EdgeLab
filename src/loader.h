@@ -1,0 +1,145 @@
+#ifndef LOADER_H_
+#define LOADER_H_
+
+#include "graph_comp.h"
+
+#include <string>
+#include <filesystem>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <tuple>
+#include <algorithm>
+
+
+class Loader {
+public:
+    Loader() = default;
+
+    // Main entry: takes a file path, checks existence, determines extension, and sets opts accordingly
+    void load_graph_header(CLIOptions& opts) {
+        // open file
+        std::ifstream file(opts.load_file_path);
+        if (!file.is_open()) {
+            std::cerr << "Failed to open file: " << opts.load_file_path << std::endl;
+            exit(1);
+        }
+
+        // dispatch based on file extension
+        std::string ext = GetFileExtension(opts.load_file_path);
+        switch (ext) {
+            case "el":
+                opts.edge_type = CLIEdgeType::UNWEIGHTED;
+                break;
+            case "wel":
+                opts.edge_type = CLIEdgeType::WEIGHTED;
+                break;
+            case "sg":
+                bool directed;
+                file.read(reinterpret_cast<char*>(&directed), sizeof(bool));
+                opts.graph_type = directed ? GraphType::DIRECTED : GraphType::UNDIRECTED;
+                break;
+            // case "s6":
+                // load_head_Sparse6(file, opts);
+                // break;
+            default:
+                std::cerr << "Unsupported file extension: " << ext << std::endl;
+                exit(1);
+        }
+
+        opts.load_file = file;
+    }
+
+    template<NonDataVertexType Vertex_t, NonDataEdgeType Edge_t, GraphType Graph_t>
+    VectorGraph<Vertex_t, Edge_t, Graph_t> LoadGraphBody(CLIOptions& opts) {
+        // dispatch based on file extension
+        std::string ext = GetFileExtension(opts.load_file_path);
+        switch (ext) {
+            case "el":
+                return load_body_EL<Vertex_t, Edge_t, Graph_t>(opts.load_file);
+            case "wel":
+                return load_body_EL<Vertex_t, Edge_t, Graph_t>(opts.load_file);
+            case "sg":
+                return load_body_SG<Vertex_t, Edge_t, Graph_t>(opts.load_file);
+            // case "s6":
+                // load_head_Sparse6(file, opts);
+                // break;
+            default:
+                std::cerr << "Unsupported file extension: " << ext << std::endl;
+                exit(1);
+        }
+    }
+
+private:
+
+    // Helper to check if file exists
+    bool FileExists(const std::string& filepath) const {
+        return std::filesystem::exists(filepath);
+    }
+    
+    // Helper to get file extension (lowercase, no dot)
+    std::string GetFileExtension(const std::string& filepath) const {
+        std::filesystem::path p(filepath);
+        std::string ext = p.extension().string();
+        if (!ext.empty() && ext[0] == '.') ext = ext.substr(1);
+        std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c){ return std::tolower(c); });
+        return ext;
+    }
+
+    // Header readers 
+    void load_head_Sparse6(std::ifstream& file, CLIOptions& opts); // .S6, .s6 // implement later
+
+    // Body readers
+    template<NonDataVertexType Vertex_t, NonDataEdgeType Edge_t, GraphType Graph_t>
+    VectorGraph<Vertex_t, Edge_t, Graph_t> load_body_EL(std::ifstream& file, CLIOptions& opts) {
+        VectorGraph<Vertex_t, Edge_t, Graph_t> vg;
+        AdjacencyMatrix<Edge_t> &matrix = vg.matrix;
+        std::string line;
+        while (std::getline(file, line)) {
+            if (line.empty() || line[0] == '#') continue;
+            std::istringstream iss(line); // parse line
+            int u, v;
+            float w = 1.0f;
+            if constexpr (WeightedEdgeType<Edge_t>) {
+                if (!(iss >> u >> v >> w)) {
+                    std::cerr << "Invalid edge line (expected src dest weight): " << line << std::endl;
+                    continue;
+                }
+                if (v < u)
+                    std::swap(u, v);
+                while (matrix.size() <= u)
+                    matrix.push_back({});
+                matrix[u].push_back({v, w});
+            } else {
+                if (!(iss >> u >> v)) {
+                    std::cerr << "Invalid edge line (expected src dest): " << line << std::endl;
+                    continue;
+                }
+                if (v < u)
+                    std::swap(u, v);
+                while (matrix.size() <= u)
+                    matrix.push_back({});
+                matrix[u].push_back({v});
+            }
+        }
+        return vg;
+    }
+
+    template<NonDataVertexType Vertex_t, NonDataEdgeType Edge_t, GraphType Graph_t>
+    VectorGraph<Vertex_t, Edge_t, Graph_t> load_body_SG(std::ifstream& file, CLIOptions& opts) {
+        VectorGraph<Vertex_t, Edge_t, Graph_t> vg;
+        AdjacencyMatrix<Edge_t> &matrix = vg.matrix;
+        std::string line;
+        while (std::getline(file, line)) {
+            size_t num_edges, num_nodes;
+            file.read(reinterpret_cast<char*>(&num_edges), sizeof(size_t));
+            file.read(reinterpret_cast<char*>(&num_nodes), sizeof(size_t));
+            // TODO: make this directly return a graph object (bypassing Builder)
+        }
+    }
+
+    // Add more as needed
+};
+
+#endif // LOADER_H_

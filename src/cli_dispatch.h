@@ -16,6 +16,12 @@
 // Kind of ugly, but this is necessary for dynamic instantiantion of templated functions
 template <typename Callable>
 void dispatch_cli(const CLIOptions& opts, Callable&& func) {
+    // call loader to load graph header to determine all other options
+    if (!opts.load_file_path.empty()) {
+        Loader loader;
+        loader.LoadGraphHeader(opts.load_file_path, opts);
+    }
+
     switch (opts.vertex_type) {
         case CLIVertexType::UNWEIGHTED:
             switch (opts.edge_type) {

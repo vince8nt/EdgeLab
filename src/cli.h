@@ -33,6 +33,8 @@ struct CLIOptions {
     int scale;
     int degree;
     GenType gen_type;
+    std::string load_file_path; // Path to load file, mutually exclusive
+    std::ifstream load_file;
 };
 
 inline std::string to_lower(const std::string& s) {
@@ -44,6 +46,7 @@ inline std::string to_lower(const std::string& s) {
 inline void print_usage(const char* prog_name) {
     std::cout << "Usage: " << prog_name << " [options]\n";
     std::cout << "\nOptions:\n";
+    std::cout << "  --load-file <path>                      (mutually exclusive with all other options)\n";
     std::cout << "  --graph-type <directed|undirected>      (default: undirected)\n";
     std::cout << "  --vertex-type <unweighted|weighted|unweighted_data|weighted_data>  (default: unweighted)\n";
     std::cout << "  --edge-type <unweighted|weighted|unweighted_data|weighted_data>    (default: unweighted)\n";
@@ -91,6 +94,30 @@ inline bool parse_enum(const std::string& value, GenType& out) {
 inline CLIOptions parse_cli(int argc, char** argv) {
     CLIOptions opts{};
     bool got_scale = false, got_degree = false, got_gen_type = false;
+    bool got_load_file = false;
+    int load_file_arg_index = -1;
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--load-file" && i+1 < argc) {
+            if (got_load_file) {
+                std::cerr << "Duplicate --load-file option." << std::endl;
+                print_usage(argv[0]);
+                exit(1);
+            }
+            opts.load_file_path = argv[++i];
+            got_load_file = true;
+            load_file_arg_index = i - 1;
+        }
+    }
+    if (got_load_file) {
+        // Only --load-file and program name are allowed
+        if (argc != 3) {
+            std::cerr << "--load-file is mutually exclusive with all other options." << std::endl;
+            print_usage(argv[0]);
+            exit(1);
+        }
+        return opts;
+    }
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
         if (arg == "--graph-type" && i+1 < argc) {
