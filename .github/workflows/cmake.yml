@@ -45,4 +45,4 @@ jobs:
 
     - name: Run dense packing check
       run: |
-        ./build/verify_packing
+        ./build/packing
