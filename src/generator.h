@@ -6,28 +6,6 @@
 #include "graph_comp.h"
 #include "builder.h"
 
-enum class GenType {
-    ERDOS_RENYI,     // Erdos-Renyi-Gilbert
-    WATTS_STROGATZ,  // Watts-Strogatz
-    BARABASI_ALBERT, // Barabasi-Albert
-};
-std::ostream& operator<<(std::ostream& os, GenType Gen_t) {
-    switch (Gen_t) {
-        case GenType::ERDOS_RENYI:
-            os << "Erdos-Renyi";
-            break;
-        case GenType::WATTS_STROGATZ:
-            os << "Watts-Strogatz";
-            break;
-        case GenType::BARABASI_ALBERT:
-            os << "Barabasi-Albert";
-            break;
-        default:
-            os << "Unknown Generation Type";
-            break;
-    }
-    return os;
-}
 
 template<NonDataVertexType Vertex_t, NonDataEdgeType Edge_t, GraphType Graph_t>
 class Generator {

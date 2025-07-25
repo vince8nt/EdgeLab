@@ -9,33 +9,9 @@
 #include "util.h"
 #include "graph_comp.h"
 #include "generator.h" // for GenType
+#include "loader.h"
 
 
-// Enum definitions for CLI
-enum class CLIVertexType {
-    UNWEIGHTED,
-    WEIGHTED,
-    UNWEIGHTED_DATA,
-    WEIGHTED_DATA
-};
-
-enum class CLIEdgeType {
-    UNWEIGHTED,
-    WEIGHTED,
-    UNWEIGHTED_DATA,
-    WEIGHTED_DATA
-};
-
-struct CLIOptions {
-    GraphType graph_type = GraphType::UNDIRECTED;
-    CLIVertexType vertex_type = CLIVertexType::UNWEIGHTED;
-    CLIEdgeType edge_type = CLIEdgeType::UNWEIGHTED;
-    int scale;
-    int degree;
-    GenType gen_type;
-    std::string load_file_path; // Path to load file, mutually exclusive
-    std::ifstream load_file;
-};
 
 inline std::string to_lower(const std::string& s) {
     std::string out = s;
@@ -95,7 +71,7 @@ inline CLIOptions parse_cli(int argc, char** argv) {
     CLIOptions opts{};
     bool got_scale = false, got_degree = false, got_gen_type = false;
     bool got_load_file = false;
-    int load_file_arg_index = -1;
+    // int load_file_arg_index = -1;
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
         if (arg == "--load-file" && i+1 < argc) {
@@ -106,7 +82,7 @@ inline CLIOptions parse_cli(int argc, char** argv) {
             }
             opts.load_file_path = argv[++i];
             got_load_file = true;
-            load_file_arg_index = i - 1;
+            // load_file_arg_index = i - 1;
         }
     }
     if (got_load_file) {

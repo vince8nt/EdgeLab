@@ -42,6 +42,57 @@ std::ostream& operator<<(std::ostream& os, GraphType Graph_t) {
     }
     return os;
 }
+
+// specification of generation types
+enum class GenType {
+    ERDOS_RENYI,     // Erdos-Renyi-Gilbert
+    WATTS_STROGATZ,  // Watts-Strogatz
+    BARABASI_ALBERT, // Barabasi-Albert
+};
+std::ostream& operator<<(std::ostream& os, GenType Gen_t) {
+    switch (Gen_t) {
+        case GenType::ERDOS_RENYI:
+            os << "Erdos-Renyi";
+            break;
+        case GenType::WATTS_STROGATZ:
+            os << "Watts-Strogatz";
+            break;
+        case GenType::BARABASI_ALBERT:
+            os << "Barabasi-Albert";
+            break;
+        default:
+            os << "Unknown Generation Type";
+            break;
+    }
+    return os;
+}
+
+// Enum definitions for CLI
+enum class CLIVertexType {
+    UNWEIGHTED,
+    WEIGHTED,
+    UNWEIGHTED_DATA,
+    WEIGHTED_DATA
+};
+
+enum class CLIEdgeType {
+    UNWEIGHTED,
+    WEIGHTED,
+    UNWEIGHTED_DATA,
+    WEIGHTED_DATA
+};
+
+struct CLIOptions {
+    GraphType graph_type = GraphType::UNDIRECTED;
+    CLIVertexType vertex_type = CLIVertexType::UNWEIGHTED;
+    CLIEdgeType edge_type = CLIEdgeType::UNWEIGHTED;
+    int scale;
+    int degree;
+    GenType gen_type;
+    std::string load_file_path; // Path to load file, mutually exclusive
+    std::shared_ptr<std::ifstream> load_file = nullptr;
+};
+
 /*
 enum class VertexType {
     UNWEIGHTED,
