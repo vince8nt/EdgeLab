@@ -67,8 +67,9 @@ public:
         }
     }
 
+    // Load graph vertices and edges from file (after being templated by cli_dispatch)
     template<NonDataVertexType Vertex_t, NonDataEdgeType Edge_t, GraphType Graph_t>
-    VectorGraph<Vertex_t, Edge_t> LoadGraphBody() {
+    Graph<Vertex_t, Edge_t, Graph_t> LoadGraphBody() {
         // dispatch based on file extension
         switch (file_type) {
             case FileType::EL:
@@ -128,7 +129,7 @@ private:
 
     // Body readers ----------------------------------------------------------------------------------------------
     template<NonDataVertexType Vertex_t, NonDataEdgeType Edge_t, GraphType Graph_t>
-    VectorGraph<Vertex_t, Edge_t> load_body_EL() {
+    Graph<Vertex_t, Edge_t, Graph_t> load_body_EL() {
         VectorGraph<Vertex_t, Edge_t> vg;
         AdjacencyMatrix<Edge_t> &matrix = vg.matrix;
         std::string line;
@@ -159,20 +160,42 @@ private:
                 matrix[u].push_back({v});
             }
         }
-        return vg;
+        file.close();
+        Builder<Vertex_t, Edge_t, Graph_t> builder;
+        Graph<Vertex_t, Edge_t, Graph_t> graph = builder.BuildGraph(vg);
+        return graph;
     }
 
-    // TODO: make this directly return a graph object (bypassing Builder)
+    // Load prebuilt graph from file
+    // most space and time efficient way to store and load graphs
+    // currently doesn't support weighted/data vertices and edges
     template<NonDataVertexType Vertex_t, NonDataEdgeType Edge_t, GraphType Graph_t>
-    VectorGraph<Vertex_t, Edge_t> load_body_SG() {
-        VectorGraph<Vertex_t, Edge_t> vg;
-        AdjacencyMatrix<Edge_t> &matrix = vg.matrix;
-        size_t num_edges, num_nodes;
+    Graph<Vertex_t, Edge_t, Graph_t> load_body_SG() {
+        if constexpr (WeightedEdgeType<Edge_t>) {
+            std::cerr << "SG format does not support weighted edges" << std::endl;
+            exit(1);
+        }
+        if constexpr (DataVertexType<Vertex_t>) {
+            std::cerr << "SG format does not support data vertices" << std::endl;
+        }
+        using Vertex = typename Graph<Vertex_t, Edge_t, Graph_t>::Vertex;
+        size_t num_edges, num_vertices;
         file.read(reinterpret_cast<char*>(&num_edges), sizeof(size_t));
-        file.read(reinterpret_cast<char*>(&num_nodes), sizeof(size_t));
-        matrix.resize(num_nodes);
+        file.read(reinterpret_cast<char*>(&num_vertices), sizeof(size_t));
         
-        return vg;
+        Vertex* vertices = (Vertex*)malloc((num_vertices + 1) * sizeof(Vertex));
+        Edge_t* edges = (Edge_t*)malloc(num_edges * sizeof(Edge_t));
+
+        for (vertex_ID_t i = 0; i < num_vertices + 1; i++) {
+            file.read(reinterpret_cast<char*>(&vertices[i]), sizeof(vertex_ID_t));
+        }
+
+        for (edge_ID_t i = 0; i < num_edges; i++) {
+            file.read(reinterpret_cast<char*>(&edges[i]), sizeof(vertex_ID_t));
+        }
+
+        return Graph<Vertex_t, Edge_t, Graph_t>(num_vertices, vertices, num_edges, edges);
+
     }
 
     // Add more as needed

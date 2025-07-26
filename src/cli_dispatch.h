@@ -6,22 +6,21 @@
 // Generate/load and build Graph via CLI generator options
 template <typename Callable, typename V, typename E, GraphType G>
 void CLI_create_graph (const CLIOptions& opts, Callable&& func) {
-    VectorGraph<V, E> vg;
     if (!opts.load_file_path.empty()) {
-        // load vector graph from file
-        vg = opts.loader->LoadGraphBody<V, E, G>();
+        // load graph from file
+        Graph<V, E, G> graph = opts.loader->LoadGraphBody<V, E, G>();
+        // template and call func with graph
+        func.template operator()<V, E, G>(graph);
     } else {
         // generate vector graph
         Generator<V, E, G> generator(opts.gen_type, opts.scale, opts.degree);
-        vg = generator.Generate();
+        VectorGraph<V, E> vg = generator.Generate();
+        // build graph
+        Builder<V, E, G> builder;
+        Graph<V, E, G> graph = builder.BuildGraph(vg);
+        // template and call func with graph
+        func.template operator()<V, E, G>(graph);
     }
-
-    // generaate CLI Graph
-    Builder<V, E, G> builder;
-    Graph<V, E, G> graph = builder.BuildGraph(vg);
-
-    // template and call func with graph
-    func.template operator()<V, E, G>(graph);
 }
 
 // Generic type dispatcher for any test program:
