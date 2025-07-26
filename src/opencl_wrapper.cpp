@@ -2,6 +2,8 @@
 #include <iostream>
 #include <sstream>
 
+#ifdef OPENCL_AVAILABLE
+
 OpenCLWrapper::OpenCLWrapper() 
     : platform_(nullptr), device_(nullptr), context_(nullptr), 
       command_queue_(nullptr), initialized_(false) {
@@ -201,4 +203,67 @@ std::string OpenCLWrapper::getErrorString(cl_int error) {
         case CL_INVALID_PROPERTY: return "CL_INVALID_PROPERTY";
         default: return "Unknown error";
     }
-} 
+}
+
+#else
+// Stub implementations when OpenCL is not available
+OpenCLWrapper::OpenCLWrapper() : initialized_(false) {}
+OpenCLWrapper::~OpenCLWrapper() {}
+
+void OpenCLWrapper::initialize() {
+    throw std::runtime_error("OpenCL is not available on this system");
+}
+
+void OpenCLWrapper::selectDevice(cl_device_type device_type) {
+    throw std::runtime_error("OpenCL is not available on this system");
+}
+
+cl_device_id OpenCLWrapper::getDevice() const { return nullptr; }
+cl_context OpenCLWrapper::getContext() const { return nullptr; }
+cl_command_queue OpenCLWrapper::getQueue() const { return nullptr; }
+
+cl_program OpenCLWrapper::createProgram(const std::string& source) {
+    throw std::runtime_error("OpenCL is not available on this system");
+}
+
+cl_kernel OpenCLWrapper::createKernel(cl_program program, const std::string& kernel_name) {
+    throw std::runtime_error("OpenCL is not available on this system");
+}
+
+cl_mem OpenCLWrapper::createBuffer(cl_mem_flags flags, size_t size, void* host_ptr) {
+    throw std::runtime_error("OpenCL is not available on this system");
+}
+
+void OpenCLWrapper::writeBuffer(cl_mem buffer, size_t size, const void* data) {
+    throw std::runtime_error("OpenCL is not available on this system");
+}
+
+void OpenCLWrapper::readBuffer(cl_mem buffer, size_t size, void* data) {
+    throw std::runtime_error("OpenCL is not available on this system");
+}
+
+void OpenCLWrapper::releaseBuffer(cl_mem buffer) {
+    throw std::runtime_error("OpenCL is not available on this system");
+}
+
+void OpenCLWrapper::executeKernel(cl_kernel kernel, size_t global_size, size_t local_size) {
+    throw std::runtime_error("OpenCL is not available on this system");
+}
+
+void OpenCLWrapper::finish() {
+    throw std::runtime_error("OpenCL is not available on this system");
+}
+
+size_t OpenCLWrapper::getMaxWorkGroupSize() const { return 0; }
+size_t OpenCLWrapper::getMaxComputeUnits() const { return 0; }
+std::string OpenCLWrapper::getDeviceName() const { return "OpenCL not available"; }
+
+void OpenCLWrapper::checkError(cl_int error, const std::string& operation) {
+    throw std::runtime_error("OpenCL is not available on this system");
+}
+
+std::string OpenCLWrapper::getErrorString(cl_int error) {
+    return "OpenCL not available";
+}
+
+#endif 

@@ -1,7 +1,83 @@
 #ifndef OPENCL_WRAPPER_H_
 #define OPENCL_WRAPPER_H_
 
+#ifdef OPENCL_AVAILABLE
 #include <CL/cl.h>
+#else
+// Dummy OpenCL types for when OpenCL is not available
+typedef void* cl_platform_id;
+typedef void* cl_device_id;
+typedef void* cl_context;
+typedef void* cl_command_queue;
+typedef void* cl_program;
+typedef void* cl_kernel;
+typedef void* cl_mem;
+typedef unsigned int cl_uint;
+typedef int cl_int;
+typedef unsigned long cl_ulong;
+typedef unsigned long cl_device_type;
+typedef unsigned long cl_mem_flags;
+#define CL_DEVICE_TYPE_GPU 0
+#define CL_MEM_READ_ONLY 0
+#define CL_MEM_READ_WRITE 0
+#define CL_MEM_COPY_HOST_PTR 0
+#define CL_SUCCESS 0
+// Add some common OpenCL error codes for the stub implementation
+#define CL_DEVICE_NOT_FOUND 0
+#define CL_DEVICE_NOT_AVAILABLE 0
+#define CL_COMPILER_NOT_AVAILABLE 0
+#define CL_MEM_OBJECT_ALLOCATION_FAILURE 0
+#define CL_OUT_OF_RESOURCES 0
+#define CL_OUT_OF_HOST_MEMORY 0
+#define CL_PROFILING_INFO_NOT_AVAILABLE 0
+#define CL_MEM_COPY_OVERLAP 0
+#define CL_IMAGE_FORMAT_MISMATCH 0
+#define CL_IMAGE_FORMAT_NOT_SUPPORTED 0
+#define CL_BUILD_PROGRAM_FAILURE 0
+#define CL_MAP_FAILURE 0
+#define CL_MISALIGNED_SUB_BUFFER_OFFSET 0
+#define CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST 0
+#define CL_COMPILE_PROGRAM_FAILURE 0
+#define CL_LINKER_NOT_AVAILABLE 0
+#define CL_LINK_PROGRAM_FAILURE 0
+#define CL_DEVICE_PARTITION_FAILED 0
+#define CL_KERNEL_ARG_INFO_NOT_AVAILABLE 0
+#define CL_INVALID_VALUE 0
+#define CL_INVALID_DEVICE_TYPE 0
+#define CL_INVALID_PLATFORM 0
+#define CL_INVALID_DEVICE 0
+#define CL_INVALID_CONTEXT 0
+#define CL_INVALID_QUEUE_PROPERTIES 0
+#define CL_INVALID_COMMAND_QUEUE 0
+#define CL_INVALID_HOST_PTR 0
+#define CL_INVALID_MEM_OBJECT 0
+#define CL_INVALID_IMAGE_FORMAT_DESCRIPTOR 0
+#define CL_INVALID_IMAGE_SIZE 0
+#define CL_INVALID_SAMPLER 0
+#define CL_INVALID_BINARY 0
+#define CL_INVALID_BUILD_OPTIONS 0
+#define CL_INVALID_PROGRAM 0
+#define CL_INVALID_PROGRAM_EXECUTABLE 0
+#define CL_INVALID_KERNEL_NAME 0
+#define CL_INVALID_KERNEL_DEFINITION 0
+#define CL_INVALID_KERNEL 0
+#define CL_INVALID_ARG_INDEX 0
+#define CL_INVALID_ARG_VALUE 0
+#define CL_INVALID_ARG_SIZE 0
+#define CL_INVALID_KERNEL_ARGS 0
+#define CL_INVALID_WORK_DIMENSION 0
+#define CL_INVALID_WORK_GROUP_SIZE 0
+#define CL_INVALID_WORK_ITEM_SIZE 0
+#define CL_INVALID_GLOBAL_OFFSET 0
+#define CL_INVALID_EVENT_WAIT_LIST 0
+#define CL_INVALID_EVENT 0
+#define CL_INVALID_OPERATION 0
+#define CL_INVALID_GL_OBJECT 0
+#define CL_INVALID_BUFFER_SIZE 0
+#define CL_INVALID_MIP_LEVEL 0
+#define CL_INVALID_GLOBAL_WORK_SIZE 0
+#define CL_INVALID_PROPERTY 0
+#endif
 #include <vector>
 #include <string>
 #include <memory>
