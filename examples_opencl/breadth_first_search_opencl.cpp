@@ -60,6 +60,8 @@ long long breadth_first_search_opencl(Graph<Vertex_t, Edge_t, Graph_t>& graph,
     }
     vertex_offsets[num_vertices] = edge_offset;
     
+
+    
     // Create OpenCL buffers
     cl_mem vertices_buffer = opencl.createBuffer(CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
                                                 vertex_offsets.size() * sizeof(cl_uint),
@@ -130,7 +132,18 @@ long long breadth_first_search_opencl(Graph<Vertex_t, Edge_t, Graph_t>& graph,
         clSetKernelArg(level_kernel, 8, sizeof(int), &current_distance);
         
         // Execute level processing kernel
-        opencl.executeKernel(level_kernel, num_vertices);
+        // Use a work group size that's a power of 2 and doesn't exceed max work group size
+        size_t max_work_group_size = opencl.getMaxWorkGroupSize();
+        size_t local_size = 256; // Common choice for GPU kernels
+        if (local_size > max_work_group_size) {
+            local_size = max_work_group_size;
+        }
+        
+        // Round up global size to be a multiple of local size
+        size_t global_size = ((num_vertices + local_size - 1) / local_size) * local_size;
+        
+
+        opencl.executeKernel(level_kernel, global_size, local_size);
         
         // Check if destination is reached
         clSetKernelArg(check_kernel, 0, sizeof(cl_mem), &distances_buffer);
@@ -138,11 +151,13 @@ long long breadth_first_search_opencl(Graph<Vertex_t, Edge_t, Graph_t>& graph,
         clSetKernelArg(check_kernel, 2, sizeof(cl_mem), &result_distance_buffer);
         clSetKernelArg(check_kernel, 3, sizeof(vertex_ID_t), &dest);
         
-        opencl.executeKernel(check_kernel, num_vertices);
+        opencl.executeKernel(check_kernel, global_size, local_size);
         
         // Check if we found the destination
         int found;
         opencl.readBuffer(found_buffer, sizeof(int), &found);
+        
+
         
         if (found) {
             int result_distance;
@@ -169,6 +184,8 @@ long long breadth_first_search_opencl(Graph<Vertex_t, Edge_t, Graph_t>& graph,
         // Get next level size
         int next_level_size;
         opencl.readBuffer(next_level_size_buffer, sizeof(int), &next_level_size);
+        
+
         
         if (next_level_size == 0) {
             break; // No path exists
@@ -209,14 +226,15 @@ struct OpenCLDispatcher {
     void operator()(Graph<V, E, G> &graph) const {
         vertex_ID_t src = 0;
         vertex_ID_t dest = graph.num_vertices() - 1;
+        auto timer = timer_start();
         try {
-            auto timer = timer_start();
             long long dist = breadth_first_search_opencl<V, E, G>(graph, src, dest);
             auto time = timer_stop(timer);
             std::cout << "OpenCL BFS returned: " << dist << " in " << time << " seconds" << std::endl;
         }
         catch (std::exception &e) {
-            std::cerr << "Caught OpenCL BFS exception: " << e.what() << std::endl;
+            auto time = timer_stop(timer);
+            std::cerr << "Caught OpenCL BFS exception: " << e.what() << " in " << time << " seconds" << std::endl;
             exit_code = 1;
         }
     }
