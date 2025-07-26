@@ -25,6 +25,8 @@ add_executable(tc examples/triangle_counting.cpp src/util.cpp)
 add_executable(bfs examples/breadth_first_search.cpp src/util.cpp)
 
 # Add threaded example executables
+add_executable(tc_threaded examples_threaded/triangle_counting.cpp src/util.cpp)
+target_link_libraries(tc_threaded Threads::Threads)
 add_executable(bfs_threaded examples_threaded/breadth_first_search.cpp src/util.cpp)
 target_link_libraries(bfs_threaded Threads::Threads)
 
