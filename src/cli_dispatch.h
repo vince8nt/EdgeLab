@@ -3,6 +3,27 @@
 
 #include "cli.h"
 
+// Generate/load and build Graph via CLI generator options
+template <typename Callable, typename V, typename E, GraphType G>
+void CLI_create_graph (const CLIOptions& opts, Callable&& func) {
+    VectorGraph<V, E> vg;
+    if (!opts.load_file_path.empty()) {
+        // load vector graph from file
+        vg = opts.loader->LoadGraphBody<V, E, G>();
+    } else {
+        // generate vector graph
+        Generator<V, E, G> generator(opts.gen_type, opts.scale, opts.degree);
+        vg = generator.Generate();
+    }
+
+    // generaate CLI Graph
+    Builder<V, E, G> builder;
+    Graph<V, E, G> graph = builder.BuildGraph(vg);
+
+    // template and call func with graph
+    func.template operator()<V, E, G>(graph);
+}
+
 // Generic type dispatcher for any test program:
 //   Generates and Builds a Graph via CLI options.
 //   Calls templated functor with the Graph as an argument.
@@ -16,10 +37,13 @@
 // Kind of ugly, but this is necessary for dynamic instantiantion of templated functions
 template <typename Callable>
 void dispatch_cli(CLIOptions& opts, Callable&& func) {
-    // call loader to load graph header to determine all other options
+    // call loader to load graph header and set:
+    // - graph type
+    // - vertex type
+    // - edge type
     if (!opts.load_file_path.empty()) {
-        Loader loader;
-        loader.load_graph_header(opts);
+        opts.loader = std::make_unique<Loader>();
+        opts.loader->load_graph_header(opts);
     }
 
     switch (opts.vertex_type) {

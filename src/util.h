@@ -10,8 +10,12 @@
 #include <algorithm>
 #include <concepts>
 #include <chrono>
+#include <memory>
 
-// Graph structure specifications
+// Forward declaration
+class Loader;
+
+// Graph capacity specifications
 using vertex_ID_t = uint32_t;
 using edge_ID_t = uint64_t;
 using weight_t = float;
@@ -90,7 +94,7 @@ struct CLIOptions {
     int degree;
     GenType gen_type;
     std::string load_file_path; // Path to load file, mutually exclusive
-    std::shared_ptr<std::ifstream> load_file = nullptr;
+    std::unique_ptr<Loader> loader;
 };
 
 /*

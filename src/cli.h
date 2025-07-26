@@ -141,21 +141,6 @@ inline CLIOptions parse_cli(int argc, char** argv) {
     return opts;
 }
 
-// Generate and build Graph via CLI generator options
-template <typename Callable, typename V, typename E, GraphType G>
-void CLI_create_graph (const CLIOptions& opts, Callable&& func) {
-    // generate edge list
-    Generator<V, E, G> generator(opts.gen_type, opts.scale, opts.degree);
-    VectorGraph<V, E> vg = generator.Generate();
-
-    // generaate CLI Graph
-    Builder<V, E, G> builder;
-    Graph<V, E, G> graph = builder.BuildGraph(vg);
-
-    // template and call func with graph
-    func.template operator()<V, E, G>(graph);
-}
-
 #endif // CLI_H_
 
 
