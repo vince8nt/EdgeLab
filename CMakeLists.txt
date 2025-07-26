@@ -30,7 +30,8 @@ target_link_libraries(tc_threaded Threads::Threads)
 add_executable(bfs_threaded examples_threaded/breadth_first_search.cpp src/util.cpp)
 target_link_libraries(bfs_threaded Threads::Threads)
 
-# Add executable for OpenCL BFS (only if OpenCL is available)
+# Add executable for OpenCL examples (only if OpenCL is available)
+# Allow ignored attributes for OpenCL headers
 if(OpenCL_FOUND)
     add_executable(bfs_opencl examples_opencl/breadth_first_search_opencl.cpp src/opencl_wrapper.cpp src/util.cpp)
     target_link_libraries(bfs_opencl ${OpenCL_LIBRARIES} Threads::Threads)
@@ -47,7 +48,7 @@ add_executable(packing test/vertex_edge_packing.cpp src/util.cpp)
 # Optionally, set warnings
 set(WARNING_TARGETS generate_and_print verify_undirected iteration bfs_threaded)
 if(OpenCL_FOUND)
-    list(APPEND WARNING_TARGETS bfs_opencl)
+    list(APPEND WARNING_TARGETS bfs_opencl tc_opencl)
 endif()
 foreach(target ${WARNING_TARGETS})
     target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Wno-ignored-attributes)
