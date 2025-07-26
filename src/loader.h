@@ -47,9 +47,11 @@ public:
         switch (file_type) {
             case FileType::EL:
                 opts.edge_type = CLIEdgeType::UNWEIGHTED;
+                load_head_EL(opts);
                 break;
             case FileType::WEL:
                 opts.edge_type = CLIEdgeType::WEIGHTED;
+                load_head_EL(opts);
                 break;
             case FileType::SG:
                 bool directed;
@@ -85,7 +87,10 @@ public:
     }
 
 private:
-    
+    // File state
+    std::ifstream file;
+    FileType file_type;    
+
     // Helper to get file extension
     FileType GetFileExtension(const std::string& filepath) const {
         std::filesystem::path p(filepath);
@@ -100,10 +105,28 @@ private:
         exit(1);
     }
 
-    // Header readers 
+    // Header readers -------------------------------------------------------------------------------------------
+    void load_head_EL(CLIOptions& opts) {
+        std::string line;
+        std::getline(file, line);
+        if (line.empty() || line[0] == '#') {
+            // get second word (space seperated on 1st line comment)
+            std::istringstream iss(line);
+            std::string first, second;
+            iss >> first >> second;
+            if (second == "directed") {
+                opts.graph_type = GraphType::DIRECTED;
+            }
+        }
+        // seek back to beginning of file
+        file.seekg(0, std::ios::beg);
+    }
+
     void load_head_Sparse6(CLIOptions& opts); // .S6, .s6 // implement later
 
-    // Body readers
+
+
+    // Body readers ----------------------------------------------------------------------------------------------
     template<NonDataVertexType Vertex_t, NonDataEdgeType Edge_t, GraphType Graph_t>
     VectorGraph<Vertex_t, Edge_t> load_body_EL() {
         VectorGraph<Vertex_t, Edge_t> vg;
@@ -121,7 +144,7 @@ private:
                 }
                 if (v < u)
                     std::swap(u, v);
-                while (matrix.size() <= u)
+                while (matrix.size() <= v)
                     matrix.push_back({});
                 matrix[u].push_back({v, w});
             } else {
@@ -131,7 +154,7 @@ private:
                 }
                 if (v < u)
                     std::swap(u, v);
-                while (matrix.size() <= u)
+                while (matrix.size() <= v)
                     matrix.push_back({});
                 matrix[u].push_back({v});
             }
@@ -154,9 +177,6 @@ private:
 
     // Add more as needed
 
-    // File state
-    std::ifstream file;
-    FileType file_type;
 };
 
 #endif // LOADER_H_
