@@ -34,6 +34,9 @@ target_link_libraries(bfs_threaded Threads::Threads)
 if(OpenCL_FOUND)
     add_executable(bfs_opencl examples_opencl/breadth_first_search_opencl.cpp src/opencl_wrapper.cpp src/util.cpp)
     target_link_libraries(bfs_opencl ${OpenCL_LIBRARIES} Threads::Threads)
+    
+    add_executable(tc_opencl examples_opencl/triangle_counting_opencl.cpp src/opencl_wrapper.cpp src/util.cpp)
+    target_link_libraries(tc_opencl ${OpenCL_LIBRARIES} Threads::Threads)
 endif()
 
 # Add test executables

@@ -44,9 +44,11 @@ edge_ID_t triangle_counting(Graph<Vertex_t, Edge_t, Graph_t> &graph) {
                     ++iter_v;
                 } else {
                     // We found a common neighbor 'w', which forms a triangle (u, v, w).
-                    // Because we enforced u < v, this triangle is counted exactly once,
-                    // when we process the edge (u, v).
-                    triangle_count++;
+                    // Check if w > v to ensure u < v < w ordering.
+                    // This ensures each triangle is counted exactly once.
+                    if (iter_u->dest() > v_id) {
+                        triangle_count++;
+                    }
                     ++iter_u;
                     ++iter_v;
                 }
