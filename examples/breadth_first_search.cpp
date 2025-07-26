@@ -62,12 +62,15 @@ struct Dispatcher {
     void operator()(Graph<V, E, G> &graph) const {
         vertex_ID_t src = 0;
         vertex_ID_t dest = graph.num_vertices() - 1;
+        auto timer = timer_start();
         try {
             long long dist = breadth_first_search<V, E, G>(graph, src, dest);
-            std::cout << "BFS returned: " << dist << std::endl;
+            auto time = timer_stop(timer);
+            std::cout << "BFS returned: " << dist << " in " << time << " seconds" << std::endl;
         }
         catch (std::exception &e) {
-            std::cerr << "Caught BFS exception: " << e.what() << std::endl;
+            auto time = timer_stop(timer);
+            std::cerr << "Caught BFS exception: " << e.what() << " in " << time << " seconds" << std::endl;
             exit_code = 1;
         }
     }

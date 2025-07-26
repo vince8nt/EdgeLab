@@ -2,7 +2,7 @@
 
 // program body for generalized VertexType, EdgeType, and GraphType
 template<typename Vertex_t, typename Edge_t, GraphType Graph_t>
-int triangle_counting(Graph<Vertex_t, Edge_t, Graph_t> &graph) {
+edge_ID_t triangle_counting(Graph<Vertex_t, Edge_t, Graph_t> &graph) {
 
     // Assumes undirected graph
     if constexpr (Graph_t == GraphType::DIRECTED)
@@ -56,26 +56,23 @@ int triangle_counting(Graph<Vertex_t, Edge_t, Graph_t> &graph) {
 
     std::cout << "Total triangles found: " << triangle_count << std::endl;
 
-    return 0;
+    return triangle_count;
 }
 
 
 // Functor for dispatching templated function via CLI options
 struct Dispatcher {
-    int &exit_code;
     template<typename V, typename E, GraphType G>
     void operator()(Graph<V, E, G> &graph) const {
-        exit_code = triangle_counting<V, E, G>(graph);
+        auto timer = timer_start();
+        edge_ID_t triangles = triangle_counting<V, E, G>(graph);
+        auto time = timer_stop(timer);
+        std::cout << "Triangle counting returned: " << triangles << " in " << time << " seconds" << std::endl;
     }
 };
 
 int main(int argc, char** argv) {
-    int exit_code = 0;
     CLIOptions opts = parse_cli(argc, argv);
-    dispatch_cli(opts, Dispatcher{exit_code});
-    if (exit_code)
-        std::cerr << "Failed with exit code: " << exit_code << std::endl;
-    else
-        std::cout << "Succeeded with exit code: " << exit_code << std::endl;
-    return exit_code;
+    dispatch_cli(opts, Dispatcher());
+    return 0;
 }
