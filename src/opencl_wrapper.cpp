@@ -205,6 +205,11 @@ std::string OpenCLWrapper::getErrorString(cl_int error) {
     }
 }
 
+// Device getter implementations
+cl_device_id OpenCLWrapper::getDevice() const { return device_; }
+cl_context OpenCLWrapper::getContext() const { return context_; }
+cl_command_queue OpenCLWrapper::getQueue() const { return command_queue_; }
+
 #else
 // Stub implementations when OpenCL is not available
 OpenCLWrapper::OpenCLWrapper() : initialized_(false) {}

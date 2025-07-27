@@ -54,3 +54,13 @@ jobs:
     - name: Run breadth-first search tests
       run: |
         ./build/breadth_first_search_test
+
+    - name: Test individual algorithm executables
+      run: |
+        # Test CPU algorithms
+        ./build/tc --scale 6 --degree 3 --gen-type erdos_renyi
+        ./build/bfs --scale 6 --degree 3 --gen-type erdos_renyi
+        
+        # Test threaded algorithms
+        ./build/tc_threaded --scale 6 --degree 3 --gen-type erdos_renyi
+        ./build/bfs_threaded --scale 6 --degree 3 --gen-type erdos_renyi

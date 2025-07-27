@@ -93,9 +93,9 @@ public:
     // Device management
     void initialize();
     void selectDevice(cl_device_type device_type = CL_DEVICE_TYPE_GPU);
-    cl_device_id getDevice() const { return device_; }
-    cl_context getContext() const { return context_; }
-    cl_command_queue getQueue() const { return command_queue_; }
+    cl_device_id getDevice() const;
+    cl_context getContext() const;
+    cl_command_queue getQueue() const;
 
     // Kernel management
     cl_program createProgram(const std::string& source);
