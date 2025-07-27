@@ -83,9 +83,9 @@ edge_ID_t triangle_counting_threaded(Graph<Vertex_t, Edge_t, Graph_t> &graph, in
     std::vector<std::thread> threads;
     vertex_ID_t vertices_per_thread = graph.num_vertices() / num_threads;
     
-    for (unsigned int i = 0; i < num_threads; ++i) {
-        vertex_ID_t start_vertex = i * vertices_per_thread;
-        vertex_ID_t end_vertex = (i == num_threads - 1) ? graph.num_vertices() : (i + 1) * vertices_per_thread;
+    for (int i = 0; i < num_threads; ++i) {
+        vertex_ID_t start_vertex = static_cast<vertex_ID_t>(i) * vertices_per_thread;
+        vertex_ID_t end_vertex = (i == num_threads - 1) ? graph.num_vertices() : static_cast<vertex_ID_t>(i + 1) * vertices_per_thread;
         
         threads.emplace_back(process_vertex_range, start_vertex, end_vertex);
     }

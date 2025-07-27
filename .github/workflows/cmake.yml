@@ -46,3 +46,11 @@ jobs:
     - name: Run dense packing check
       run: |
         ./build/packing
+
+    - name: Run triangle counting tests
+      run: |
+        ./build/triangle_counting_test
+
+    - name: Run breadth-first search tests
+      run: |
+        ./build/breadth_first_search_test
