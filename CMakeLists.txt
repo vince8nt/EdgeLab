@@ -20,37 +20,37 @@ find_package(Threads REQUIRED)
 include_directories(${CMAKE_SOURCE_DIR}/src)
 
 # Add example executables
-add_executable(generate_and_print examples/generate_and_print.cpp src/util.cpp)
-add_executable(tc examples/triangle_counting.cpp src/util.cpp)
-add_executable(bfs examples/breadth_first_search.cpp src/util.cpp)
+add_executable(generate_and_print examples/generate_and_print.cpp)
+add_executable(tc examples/triangle_counting.cpp)
+add_executable(bfs examples/breadth_first_search.cpp)
 
 # Add threaded example executables
-add_executable(tc_threaded examples_threaded/triangle_counting.cpp src/util.cpp)
+add_executable(tc_threaded examples_threaded/triangle_counting.cpp)
 target_link_libraries(tc_threaded Threads::Threads)
-add_executable(bfs_threaded examples_threaded/breadth_first_search.cpp src/util.cpp)
+add_executable(bfs_threaded examples_threaded/breadth_first_search.cpp)
 target_link_libraries(bfs_threaded Threads::Threads)
 
 # Add executable for OpenCL examples (only if OpenCL is available)
 # Allow ignored attributes for OpenCL headers
 if(OpenCL_FOUND)
-    add_executable(bfs_opencl examples_opencl/breadth_first_search.cpp src/opencl_wrapper.cpp src/util.cpp)
+    add_executable(bfs_opencl examples_opencl/breadth_first_search.cpp)
     target_link_libraries(bfs_opencl ${OpenCL_LIBRARIES} Threads::Threads)
     
-    add_executable(tc_opencl examples_opencl/triangle_counting.cpp src/opencl_wrapper.cpp src/util.cpp)
+    add_executable(tc_opencl examples_opencl/triangle_counting.cpp)
     target_link_libraries(tc_opencl ${OpenCL_LIBRARIES} Threads::Threads)
 endif()
 
 # Add test executables
-add_executable(verify_undirected test/verify_undirected.cpp src/util.cpp)
-add_executable(iteration test/iteration.cpp src/util.cpp)
-add_executable(packing test/vertex_edge_packing.cpp src/util.cpp)
-add_executable(triangle_counting_test test/triangle_counting_test.cpp src/util.cpp src/opencl_wrapper.cpp)
+add_executable(verify_undirected test/verify_undirected.cpp)
+add_executable(iteration test/iteration.cpp)
+add_executable(packing test/vertex_edge_packing.cpp)
+add_executable(triangle_counting_test test/triangle_counting_test.cpp)
 target_link_libraries(triangle_counting_test Threads::Threads)
 if(OpenCL_FOUND)
     target_link_libraries(triangle_counting_test ${OpenCL_LIBRARIES})
 endif()
 
-add_executable(breadth_first_search_test test/breadth_first_search_test.cpp src/util.cpp src/opencl_wrapper.cpp)
+add_executable(breadth_first_search_test test/breadth_first_search_test.cpp)
 target_link_libraries(breadth_first_search_test Threads::Threads)
 if(OpenCL_FOUND)
     target_link_libraries(breadth_first_search_test ${OpenCL_LIBRARIES})
