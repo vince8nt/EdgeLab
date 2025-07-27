@@ -22,9 +22,9 @@ long long breadth_first_search_opencl(Graph<Vertex_t, Edge_t, Graph_t>& graph,
     std::cout << "Max compute units: " << opencl.getMaxComputeUnits() << std::endl;
     
     // Load OpenCL kernel source
-    std::ifstream kernel_file("../kernels/bfs.cl");
-    if (!kernel_file.is_open()) {
-        throw std::runtime_error("Failed to open kernel file: ../kernels/bfs.cl");
+            std::ifstream kernel_file("../examples_opencl/breadth_first_search.cl");
+        if (!kernel_file.is_open()) {
+            throw std::runtime_error("Failed to open kernel file: ../examples_opencl/breadth_first_search.cl");
     }
     
     std::stringstream kernel_source;
