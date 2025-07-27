@@ -47,6 +47,10 @@ jobs:
       run: |
         ./build/packing
 
+    - name: Run generate and print test
+      run: |
+        ./build/generate_and_print --scale 5 --degree 3 --gen-type erdos_renyi
+
     - name: Run triangle counting tests
       run: |
         ./build/triangle_counting_test
