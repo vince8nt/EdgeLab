@@ -1,3 +1,6 @@
+#ifndef TRIANGLE_COUNTING_OPENCL_H
+#define TRIANGLE_COUNTING_OPENCL_H
+
 #include "../src/cli_dispatch.h"
 #include "../src/opencl_wrapper.h"
 #include <fstream>
@@ -63,8 +66,6 @@ long long triangle_counting_opencl(Graph<Vertex_t, Edge_t, Graph_t>& graph) {
     }
     vertex_offsets[num_vertices] = edge_offset;
     
-
-    
     // Create OpenCL buffers
     cl_mem vertices_buffer = opencl.createBuffer(CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
                                                 vertex_offsets.size() * sizeof(cl_uint),
@@ -98,7 +99,6 @@ long long triangle_counting_opencl(Graph<Vertex_t, Edge_t, Graph_t>& graph) {
     // Round up global size to be a multiple of local size
     size_t global_size = ((num_vertices + local_size - 1) / local_size) * local_size;
     
-
     opencl.executeKernel(triangle_kernel, global_size, local_size);
     
     // Read result
@@ -112,24 +112,7 @@ long long triangle_counting_opencl(Graph<Vertex_t, Edge_t, Graph_t>& graph) {
     clReleaseKernel(triangle_kernel);
     clReleaseProgram(program);
     
-    std::cout << "Total triangles found: " << triangle_count << std::endl;
-    
     return triangle_count;
 }
 
-// Functor for dispatching templated function via CLI options
-struct OpenCLTriangleDispatcher {
-    template<typename V, typename E, GraphType G>
-    void operator()(Graph<V, E, G> &graph) const {
-        auto timer = timer_start();
-        long long triangles = triangle_counting_opencl<V, E, G>(graph);
-        auto time = timer_stop(timer);
-        std::cout << "OpenCL Triangle Counting returned: " << triangles << " in " << time << " seconds" << std::endl;
-    }
-};
-
-int main(int argc, char** argv) {
-    CLIOptions opts = parse_cli(argc, argv);
-    dispatch_cli(opts, OpenCLTriangleDispatcher());
-    return 0;
-} 
+#endif // TRIANGLE_COUNTING_OPENCL_H 

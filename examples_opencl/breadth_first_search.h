@@ -1,3 +1,6 @@
+#ifndef BREADTH_FIRST_SEARCH_OPENCL_H
+#define BREADTH_FIRST_SEARCH_OPENCL_H
+
 #include "../src/cli_dispatch.h"
 #include "../src/opencl_wrapper.h"
 #include <fstream>
@@ -59,8 +62,6 @@ long long breadth_first_search_opencl(Graph<Vertex_t, Edge_t, Graph_t>& graph,
         edge_offset += vertex.degree();
     }
     vertex_offsets[num_vertices] = edge_offset;
-    
-
     
     // Create OpenCL buffers
     cl_mem vertices_buffer = opencl.createBuffer(CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
@@ -142,7 +143,6 @@ long long breadth_first_search_opencl(Graph<Vertex_t, Edge_t, Graph_t>& graph,
         // Round up global size to be a multiple of local size
         size_t global_size = ((num_vertices + local_size - 1) / local_size) * local_size;
         
-
         opencl.executeKernel(level_kernel, global_size, local_size);
         
         // Check if destination is reached
@@ -156,8 +156,6 @@ long long breadth_first_search_opencl(Graph<Vertex_t, Edge_t, Graph_t>& graph,
         // Check if we found the destination
         int found;
         opencl.readBuffer(found_buffer, sizeof(int), &found);
-        
-
         
         if (found) {
             int result_distance;
@@ -184,8 +182,6 @@ long long breadth_first_search_opencl(Graph<Vertex_t, Edge_t, Graph_t>& graph,
         // Get next level size
         int next_level_size;
         opencl.readBuffer(next_level_size_buffer, sizeof(int), &next_level_size);
-        
-
         
         if (next_level_size == 0) {
             break; // No path exists
@@ -216,37 +212,7 @@ long long breadth_first_search_opencl(Graph<Vertex_t, Edge_t, Graph_t>& graph,
     clReleaseKernel(check_kernel);
     clReleaseProgram(program);
     
-    throw std::runtime_error("No path exists between source and destination.");
+    return -1;
 }
 
-// Functor for dispatching templated function via CLI options
-struct OpenCLDispatcher {
-    int &exit_code;
-    template<typename V, typename E, GraphType G>
-    void operator()(Graph<V, E, G> &graph) const {
-        vertex_ID_t src = 0;
-        vertex_ID_t dest = graph.num_vertices() - 1;
-        auto timer = timer_start();
-        try {
-            long long dist = breadth_first_search_opencl<V, E, G>(graph, src, dest);
-            auto time = timer_stop(timer);
-            std::cout << "OpenCL BFS returned: " << dist << " in " << time << " seconds" << std::endl;
-        }
-        catch (std::exception &e) {
-            auto time = timer_stop(timer);
-            std::cerr << "Caught OpenCL BFS exception: " << e.what() << " in " << time << " seconds" << std::endl;
-            exit_code = 1;
-        }
-    }
-};
-
-int main(int argc, char** argv) {
-    int exit_code = 0;
-    CLIOptions opts = parse_cli(argc, argv);
-    dispatch_cli(opts, OpenCLDispatcher{exit_code});
-    if (exit_code)
-        std::cerr << "Failed with exit code: " << exit_code << std::endl;
-    else
-        std::cout << "Succeeded with exit code: " << exit_code << std::endl;
-    return exit_code;
-}
+#endif // BREADTH_FIRST_SEARCH_OPENCL_H 
