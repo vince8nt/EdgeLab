@@ -18,9 +18,11 @@
 class Loader;
 
 // Graph capacity specifications
+// use unsigned integer types so that bit layout is well defined (for saving/loading files)
 using vertex_ID_t = uint32_t;
 using edge_ID_t = uint64_t;
-using weight_t = float;
+using weight_t = uint32_t;
+constexpr weight_t default_weight = 1;
 
 // timer for benchmarking
 inline std::chrono::steady_clock::time_point timer_start() { 

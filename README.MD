@@ -41,6 +41,202 @@ A high-performance C++20 graph library for efficient graph loading, generation, 
 
 ---
 
+## Graph Types
+
+EdgeLab supports a comprehensive set of graph types through flexible templating. The library provides different vertex and edge types that can be combined to create various graph configurations.
+
+### Vertex Types
+
+- **VertexUW (Unweighted):** Basic vertex with no additional data
+    - Default weight: `1.0`
+    - Memory efficient for simple graphs
+
+- **VertexW (Weighted):** Vertex with floating-point weight
+    - Custom weight value
+    - Useful for algorithms that consider vertex importance
+
+- **VertexUWD<Data_t> (Unweighted with Data):** Vertex with custom data but no weight
+    - Stores arbitrary data type `Data_t`
+    - Default weight: `1.0`
+    - Useful for storing metadata (e.g., labels, categories)
+
+- **VertexWD<Data_t> (Weighted with Data):** Vertex with both weight and custom data
+    - Combines weight and arbitrary data type `Data_t`
+    - Maximum flexibility for complex applications
+
+### Edge Types
+
+- **EdgeUW (Unweighted):** Basic edge with destination vertex only
+    - Default weight: `1.0`
+    - Memory efficient for simple graphs
+
+- **EdgeW (Weighted):** Edge with floating-point weight
+    - Custom weight value
+    - Essential for weighted graph algorithms
+
+- **EdgeUWD<Data_t> (Unweighted with Data):** Edge with custom data but no weight
+    - Stores arbitrary data type `Data_t`
+    - Default weight: `1.0`
+    - Useful for storing edge metadata (e.g., timestamps, types)
+
+- **EdgeWD<Data_t> (Weighted with Data):** Edge with both weight and custom data
+    - Combines weight and arbitrary data type `Data_t`
+    - Maximum flexibility for complex edge properties
+
+### Graph Direction Types
+
+- **GraphType::DIRECTED:** Directed graph where edges have direction
+    - Edge (u,v) exists independently of edge (v,u)
+    - Useful for modeling asymmetric relationships
+
+- **GraphType::UNDIRECTED:** Undirected graph where edges are bidirectional
+    - Edge (u,v) implies edge (v,u) exists
+    - Automatically symmetrized during graph construction
+    - Useful for modeling symmetric relationships
+
+### Graph File Formats
+
+EdgeLab supports multiple file formats for loading and saving graphs:
+
+- **EL (Edge List):** Plain text edge list format
+    - Unweighted edges and vertices
+    - Defaults to undirected, but can be set to directed via comment on the first line
+    - Edges are formatted as: `<source> <destination>`
+    - Vertices must be unsigned 32-bit integers.
+    - Vertices do not need to be densely packed, but will be inneficient if very sparse
+    - Edges can come in any order and duplicate edges are ok
+```markdown
+# directed
+0 1
+0 2
+1 2
+1 3
+2 3
+3 1
+```
+
+- **WEL (Weighted Edge List):** Plain text weighted edge list format
+    - Weighted edges, unweighted vertices
+    - Edges are formatted as: `<source> <destination> <weight>`
+    - Weights must be unsigned 32-bit integers.
+```markdown
+# directed
+0 1 1
+0 2 2
+1 2 5
+1 3 1
+2 3 2
+3 1 3
+```
+
+- **VEL (Edge List with Vertex Weights):** Plain text format with vertex weights
+    - Unweighted edges, weighted vertices
+    - Vertex weights are added as lines formatted as: `v <vertex> <weight>`
+    - Vertex weights can be interleaved with edges
+    - Vertices without a defined weight will default to `1`
+```markdown
+# directed
+v 0 1
+0 1
+0 2
+v 1 6
+1 2
+1 3
+2 3
+3 1
+v 2 3
+
+```
+
+- **VWEL (Weighted Edge List with Vertex Weights):** Plain text format with both weights
+    - Weighted edges and vertices
+```markdown
+# directed
+v 0 1
+v 1 6
+v 2 3
+v 3 1
+0 1 1
+0 2 2
+1 2 5
+1 3 1
+2 3 2
+3 1 3
+```
+
+- **GRAPH (METIS Graph):** METIS graph format
+    - Supports weighted/unweighted edges and vertices
+    - All graphs are assumed directed (but can be made fully symmetrized to act undirected)
+    - Standard format for graph partitioning
+    - vertex IDs must be positive integers (excluding 0)
+    - Header formatted as `<num vertices> <num edges> <flag>?`
+    - Flag is an optional parameter that defines if vertices/edges are weighted
+    - Flag consists of 2 binary digits `<v_weights><e_weights>`
+    - The body is written in sparse row format with each line representing a vertex (1-based)
+    - Each line consists of space seperated unsigned integers
+    - For weighted vertices, the first number of each line is the vertex weight
+    - Otherwise, lines are a list of outgoing edges (sorted by strictly increasing vertex ID).
+    - For weighted edges, each edge is of the form `<weight> <destination>`
+```markdown
+// A METIS graph equavilant to the VWEL example (vertex IDs shifted up by 1)
+4 6 11     // header line for: 4 vertices, 6 edges, weighted vertices and edges
+1 1 2 2 3
+6 5 3 1 4 // vertexID: 2, weight: 6, edges: [[weight: 5, dest: 3], [weight: 1, dest: 4]]
+3 2 4
+4 3 5
+```
+
+- **ELAB (EdgeLab Binary):** Custom binary format
+    - Supports all graph types (directed/undirected, weighted/unweighted)
+    - Fast loading and saving with small file sizes
+    - optimized to use 50% less space for undirected graphs vs symmetrized directed graphs
+    - Platform-independent binary format
+    - 15 byte Header formatted as: `<flags>(3 bytes) <num vertices>(4 bytes) <num_edges>(8 bytes)`
+        - Flag bytes specify the booleans: `<directed> <v_weights> <e_weights>`
+    - Vertex info (repeated `<num vertices> + 1` times):
+        - Format: `<weight>(4 bytes)? <edges_offset>(8 bytes)`
+        - The `<num vertices> + 1`(last) entry should have `<edges_offset> = num_edges`
+            - It's weight is unused data
+    - Edges info (repeated `<num edges>` times):
+        - Format: `<weight>(4 bytes)? <destination>(4 bytes)`
+        - Vertex `v` is the source to edges: `edges_offsets[v] to edges_offsets[v+1]` 
+        - For each vertex, edges are sorted by strictly increasing destination ID
+        - For directed graphs, only edges where `src < dest` are allowed
+            - Self loops are not possible for directed graphs
+
+### Example Graph Type Combinations
+
+```cpp
+// Simple unweighted undirected graph
+using SimpleGraph = Graph<VertexUW, EdgeUW, GraphType::UNDIRECTED>;
+
+// Weighted directed graph
+using WeightedGraph = Graph<VertexW, EdgeW, GraphType::DIRECTED>;
+
+// Graph with custom vertex and edge data
+struct VertexData { std::string label; int category; };
+struct EdgeData { double reliability; int timestamp; };
+using CustomGraph = Graph<VertexWD<VertexData>, EdgeWD<EdgeData>, GraphType::DIRECTED>;
+
+// Memory-efficient unweighted graph
+using EfficientGraph = Graph<VertexUW, EdgeUW, GraphType::DIRECTED>;
+```
+
+### Type Concepts and Constraints
+
+EdgeLab uses C++20 concepts to ensure type safety at compile time:
+
+- **VertexType:** Ensures vertex types derive from `VertexUW`
+- **EdgeType:** Ensures edge types derive from `EdgeUW`
+- **WeightedVertexType:** Identifies vertex types with weights
+- **WeightedEdgeType:** Identifies edge types with weights
+- **DataVertexType:** Identifies vertex types with custom data
+- **DataEdgeType:** Identifies edge types with custom data
+
+These concepts enable compile-time validation and optimization based on the specific graph type being used.
+
+---
+
 ### CLI & Dispatch
 
 - **CLI (src/cli.h):** Command-line interface for specifying generator options (graph type, vertex/edge type, scale, degree, generator type) or file loading options.

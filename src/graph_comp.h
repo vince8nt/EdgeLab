@@ -13,7 +13,7 @@
 // Mutable Data stored inplace - for large data sizes, use a seperate array indexed by vertexID.
 struct VertexUW {
     using data_type = void;
-    weight_t weight() const { return 1.0; }
+    weight_t weight() const { return default_weight; }
 };
 #pragma pack (push, 4)
 template<typename Data_t>
@@ -26,7 +26,7 @@ protected:
     Data_t data_;
 };
 struct VertexW : public VertexUW {
-    VertexW() : weight_(0.0) {} // default for builder
+    VertexW() : weight_(default_weight) {} // default for builder
     VertexW(weight_t weight) : weight_(weight) {}
     weight_t weight() const { return weight_; }
 protected:
@@ -34,7 +34,8 @@ protected:
 };
 template<typename Data_t>
 struct VertexWD : public VertexUWD<Data_t> {
-    VertexWD() : VertexUWD<Data_t>(), weight_(0.0) {} // default for builder
+    VertexWD() : VertexUWD<Data_t>(), weight_(default_weight) {} // default for builder
+    VertexWD(weight_t weight) : VertexUWD<Data_t>(), weight_(weight) {}
     VertexWD(weight_t weight, Data_t data) : VertexUWD<Data_t>(data), weight_(weight) {}
     weight_t weight() const { return weight_; }
 protected:
@@ -51,7 +52,7 @@ struct EdgeUW {
     EdgeUW(vertex_ID_t dest) : dest_(dest) {}
     using data_type = void;
     vertex_ID_t dest() const { return dest_; }
-    weight_t weight() const { return 1.0; }
+    weight_t weight() const { return default_weight; }
     EdgeUW inverse(vertex_ID_t src) const { return(EdgeUW(src)); }
 protected:
     vertex_ID_t dest_;    
@@ -69,7 +70,7 @@ protected:
 };
 #pragma pack (pop)
 struct EdgeW : public EdgeUW {
-    EdgeW() : EdgeUW(), weight_(0.0) {}  // Default constructor
+    EdgeW() : EdgeUW(), weight_(default_weight) {}  // Default constructor
     EdgeW(vertex_ID_t dest, weight_t weight) : EdgeUW(dest), weight_(weight) {}
     weight_t weight() const { return weight_; }
     EdgeW inverse(vertex_ID_t src) const { return(EdgeW(src, weight_)); }
@@ -79,7 +80,7 @@ protected:
 #pragma pack (push, 4)
 template<typename Data_t>
 struct EdgeWD : public EdgeUWD<Data_t> {
-    EdgeWD() : EdgeUWD<Data_t>(), weight_(0.0) {}  // Default constructor
+    EdgeWD() : EdgeUWD<Data_t>(), weight_(default_weight) {}  // Default constructor
     EdgeWD(vertex_ID_t dest, weight_t weight, Data_t data) :
         EdgeUWD<Data_t>(dest, data), weight_(weight) {}
     weight_t weight() const { return weight_; }

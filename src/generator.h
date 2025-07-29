@@ -45,7 +45,7 @@ private:
         std::mt19937 gen;
         gen.seed(seed_);
         std::uniform_int_distribution<vertex_ID_t> vertex_dist(0, num_vertices_ - 1);
-        std::uniform_real_distribution<weight_t> weight_dist(0.0, 2.0);
+        std::uniform_int_distribution<weight_t> weight_dist(1, 256);
         VectorGraph<Vertex_t, Edge_t> vg(num_vertices_);
 
         // generate random edges
@@ -57,7 +57,7 @@ private:
                 if (src == dest) continue; // disable self loops for undirected graphs
             }
             if constexpr (WeightedEdgeType<Edge_t>) {
-                weight_t weight = 2 - weight_dist(gen);
+                weight_t weight = weight_dist(gen);
                 if constexpr (Graph_t == GraphType::UNDIRECTED) {
                     if (src <= dest)
                         matrix[src].push_back({dest, weight});
@@ -84,7 +84,7 @@ private:
             auto &vertices = vg.vertices;
             vertices.reserve(num_vertices_);
             for (vertex_ID_t v = 0; v < num_vertices_; v++) {
-                vertices.push_back(2 - weight_dist(gen));
+                vertices.push_back(weight_dist(gen));
             }
         }
 
