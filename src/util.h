@@ -25,12 +25,12 @@ using weight_t = uint32_t;
 constexpr weight_t default_weight = 1;
 
 // timer for benchmarking
-inline std::chrono::steady_clock::time_point timer_start() { 
-    return std::chrono::steady_clock::now(); 
+inline std::chrono::high_resolution_clock::time_point timer_start() { 
+    return std::chrono::high_resolution_clock::now(); 
 }
 
-inline double timer_stop(const std::chrono::steady_clock::time_point &start) {
-    auto end = std::chrono::steady_clock::now(); // Capture end time
+inline double timer_stop(const std::chrono::high_resolution_clock::time_point &start) {
+    auto end = std::chrono::high_resolution_clock::now(); // Capture end time
     return std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.0;
 }
 

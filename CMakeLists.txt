@@ -58,8 +58,20 @@ if(OpenCL_FOUND)
     target_link_libraries(breadth_first_search_test ${OpenCL_LIBRARIES})
 endif()
 
+# Add benchmark executables
+add_executable(iteration_benchmark benchmark/iteration_benchmark.cpp)
+target_link_libraries(iteration_benchmark Threads::Threads)
+add_executable(generation_benchmark benchmark/generation_benchmark.cpp)
+target_link_libraries(generation_benchmark Threads::Threads)
+
+# Add threaded algorithm benchmark executables
+add_executable(bfs_threaded_benchmark benchmark/bfs_threaded_benchmark.cpp)
+target_link_libraries(bfs_threaded_benchmark Threads::Threads)
+add_executable(tc_threaded_benchmark benchmark/tc_threaded_benchmark.cpp)
+target_link_libraries(tc_threaded_benchmark Threads::Threads)
+
 # Optionally, set warnings
-set(WARNING_TARGETS generate_and_print verify_undirected iteration bfs_threaded)
+set(WARNING_TARGETS generate_and_print verify_undirected iteration bfs_threaded iteration_benchmark generation_benchmark)
 if(OpenCL_FOUND)
     list(APPEND WARNING_TARGETS bfs_opencl tc_opencl breadth_first_search_test triangle_counting_test)
 endif()

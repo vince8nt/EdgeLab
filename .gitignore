@@ -1,4 +1,5 @@
 # Untracked files:
 *.exe
 build
-
+*.json
+benchmark/micro_benchmark_results
