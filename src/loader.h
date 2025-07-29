@@ -35,6 +35,22 @@ std::ostream& operator<<(std::ostream& os, FileType file_type) {
     return os;
 }
 
+// Helper to get file extension
+    FileType GetFileExtension(const std::string& filepath) {
+    std::filesystem::path p(filepath);
+    std::string ext = p.extension().string();
+    if (!ext.empty() && ext[0] == '.') ext = ext.substr(1);
+    std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c){ return std::tolower(c); });
+    if (ext == "el") return FileType::EL; // maybe use an unordered map if we add more file types
+    if (ext == "wel") return FileType::WEL;
+    if (ext == "vel") return FileType::VEL;
+    if (ext == "vwel") return FileType::VWEL;
+    if (ext == "graph") return FileType::GRAPH;
+    if (ext == "elab") return FileType::ELAB;
+    std::cerr << "Unsupported file extension: " << ext << std::endl;
+    exit(1);
+}
+
 class Loader {
 public:
     Loader() = default;
@@ -110,22 +126,6 @@ private:
     FileType file_type_;
     vertex_ID_t num_vertices_;
     edge_ID_t num_edges_;
-
-    // Helper to get file extension
-    FileType GetFileExtension(const std::string& filepath) const {
-        std::filesystem::path p(filepath);
-        std::string ext = p.extension().string();
-        if (!ext.empty() && ext[0] == '.') ext = ext.substr(1);
-        std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c){ return std::tolower(c); });
-        if (ext == "el") return FileType::EL; // maybe use an unordered map if we add more file types
-        if (ext == "wel") return FileType::WEL;
-        if (ext == "vel") return FileType::VEL;
-        if (ext == "vwel") return FileType::VWEL;
-        if (ext == "graph") return FileType::GRAPH;
-        if (ext == "elab") return FileType::ELAB;
-        std::cerr << "Unsupported file extension: " << ext << std::endl;
-        exit(1);
-    }
 
     // Header readers -------------------------------------------------------------------------------------------
     void load_head_EL(CLIOptions& opts) {
@@ -210,16 +210,19 @@ private:
                     std::cerr << "Invalid edge line (expected src dest weight): " << line << std::endl;
                     exit(1);
                 }
+                // Ensure matrix is large enough for both vertices
+                while (matrix.size() <= std::max(u, v)) {
+                    matrix.push_back({});
+                    if constexpr (NonEmptyVertexType<Vertex_t>)
+                        vg.vertices.push_back(Vertex_t());
+                }
                 if constexpr (Graph_t == GraphType::UNDIRECTED) {
                     if (u == v)
                         continue;
                     if (u > v)
                         std::swap(u, v);
-                    while (matrix.size() <= v) {
-                        matrix.push_back({});
-                        if constexpr (NonEmptyVertexType<Vertex_t>)
-                            vg.vertices.push_back(Vertex_t());
-                    }
+                    matrix[u].push_back({v, w});
+                } else {
                     matrix[u].push_back({v, w});
                 }
             } else {
@@ -227,16 +230,19 @@ private:
                     std::cerr << "Invalid edge line (expected src dest): " << line << std::endl;
                     exit(1);
                 }
+                // Ensure matrix is large enough for both vertices
+                while (matrix.size() <= std::max(u, v)) {
+                    matrix.push_back({});
+                    if constexpr (NonEmptyVertexType<Vertex_t>)
+                        vg.vertices.push_back(Vertex_t());
+                }
                 if constexpr (Graph_t == GraphType::UNDIRECTED) {
                     if (u == v)
                         continue;
                     if (u > v)
                         std::swap(u, v);
-                    while (matrix.size() <= v) {
-                        matrix.push_back({});
-                        if constexpr (NonEmptyVertexType<Vertex_t>)
-                            vg.vertices.push_back(Vertex_t());
-                    }
+                    matrix[u].push_back({v});
+                } else {
                     matrix[u].push_back({v});
                 }
             }
@@ -351,7 +357,6 @@ private:
                 }
             }
         }
-
 
         file_.close();
         return Graph<Vertex_t, Edge_t, Graph_t>(num_vertices_, vertices, num_edges_, edges);

@@ -23,6 +23,7 @@ inline void print_usage(const char* prog_name) {
     std::cout << "Usage: " << prog_name << " [options]\n";
     std::cout << "\nOptions:\n";
     std::cout << "  --load-file <path>                      (mutually exclusive with all other options)\n";
+    std::cout << "  --save-file <path>                      (optional, save graph to file)\n";
     std::cout << "  --graph-type <directed|undirected>      (default: undirected)\n";
     std::cout << "  --vertex-type <unweighted|weighted|unweighted_data|weighted_data>  (default: unweighted)\n";
     std::cout << "  --edge-type <unweighted|weighted|unweighted_data|weighted_data>    (default: unweighted)\n";
@@ -86,11 +87,19 @@ inline CLIOptions parse_cli(int argc, char** argv) {
         }
     }
     if (got_load_file) {
-        // Only --load-file and program name are allowed
-        if (argc != 3) {
-            std::cerr << "--load-file is mutually exclusive with all other options." << std::endl;
+        // Only --load-file, --save-file, and program name are allowed
+        if (argc > 5) {
+            std::cerr << "--load-file is mutually exclusive with generation options." << std::endl;
             print_usage(argv[0]);
             exit(1);
+        }
+        // Check for --save-file option
+        for (int i = 1; i < argc; ++i) {
+            std::string arg = argv[i];
+            if (arg == "--save-file" && i+1 < argc) {
+                opts.save_file_path = argv[++i];
+                break;
+            }
         }
         return opts;
     }
@@ -127,6 +136,8 @@ inline CLIOptions parse_cli(int argc, char** argv) {
                 exit(1);
             }
             got_gen_type = true;
+        } else if (arg == "--save-file" && i+1 < argc) {
+            opts.save_file_path = argv[++i];
         } else {
             std::cerr << "Unknown or incomplete option: " << arg << std::endl;
             print_usage(argv[0]);

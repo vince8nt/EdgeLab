@@ -103,6 +103,7 @@ struct CLIOptions {
     int degree;
     GenType gen_type;
     std::string load_file_path; // Path to load file, mutually exclusive
+    std::string save_file_path; // Path to save file (optional)
     std::unique_ptr<Loader> loader;
 };
 

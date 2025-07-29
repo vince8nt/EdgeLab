@@ -41,6 +41,8 @@ endif()
 
 # Add test executables
 add_executable(generate_and_print test/generate_and_print.cpp)
+add_executable(convert test/converter.cpp)
+add_executable(print test/print.cpp)
 add_executable(verify_undirected test/verify_undirected.cpp)
 add_executable(iteration test/iteration.cpp)
 add_executable(packing test/vertex_edge_packing.cpp)
