@@ -18,18 +18,16 @@ public:
         auto timer = timer_start();
 
         // sort, remove duplictes, and create inverse edges(if undirected)
-        std::vector<vertex_ID_t> degrees;
-        degrees.reserve(vg.matrix.size());
-        vertex_ID_t num_edges = SortAndRemoveDuplicates(vg.matrix, degrees);
+        auto edges_offset = SortAndRemoveDuplicates(vg.matrix);
         // std::cout << vg << std::endl;
         std::cout << "  - Sorting + Correcting " << Graph_t << " Vector Graph: "
             << timer_stop(timer) << " seconds" << std::endl;
 
         // create CSR Graph
-        Graph<Vertex_t, Edge_t, Graph_t> g = FlattenVectorGraph(num_edges, vg, degrees);
+        Graph<Vertex_t, Edge_t, Graph_t> g = FlattenVectorGraph(vg, edges_offset);
         // std::cout << g << std::endl;
         auto time = timer_stop(timer);
-        std::cout << "  - Total Graph(" << vg.matrix.size() << " vertices, " << num_edges
+        std::cout << "  - Total Graph(" << vg.matrix.size() << " vertices, " << edges_offset.back()
             << " edges) build time: " << time << " seconds" << std::endl;
 
         return g;
@@ -39,9 +37,8 @@ private:
 
     // sort and remove duplicate edges (put at end) from AdjacencyMatrix
     // for duplicate edges with different weights/IDs, this is non-deterministic
-    edge_ID_t SortAndRemoveDuplicates(AdjacencyMatrix<Edge_t> &adjacency_matrix,
-            std::vector<vertex_ID_t> &degrees) {
-        edge_ID_t num_edges = 0;
+    std::vector<edge_ID_t> SortAndRemoveDuplicates(AdjacencyMatrix<Edge_t> &adjacency_matrix) {
+        std::vector<edge_ID_t> edges_offset(adjacency_matrix.size() + 1);
         for (vertex_ID_t vertex_id = 0; vertex_id < adjacency_matrix.size(); vertex_id++) {
             AdjacencyList<Edge_t> &adjacency_list = adjacency_matrix[vertex_id];
             std::sort(adjacency_list.begin(), adjacency_list.end(),
@@ -52,52 +49,53 @@ private:
                 [](const Edge_t &a, const Edge_t &b) {
                     return a.dest() == b.dest();
                 });
-            // no need to resize vector now since it is inneficient
-            // adjacency_list.resize(last - adjacency_list.begin());
-            vertex_ID_t unique_edges = std::distance(adjacency_list.begin(), last);
-            num_edges += unique_edges;
-            degrees.push_back(unique_edges);
+            adjacency_list.resize(last - adjacency_list.begin());
 
-            // fill in back side of edges (with increasing src to dest ID)
+            // update dest offsets for undirected graphs
+            vertex_ID_t new_edges = std::distance(adjacency_list.begin(), last);
             if constexpr (Graph_t == GraphType::UNDIRECTED) {
-                for (Edge_t &edge : adjacency_list) {
-                    // can be combined into loop to make faster
-                    if (vertex_id < edge.dest()) // also look into constructing in place
-                        adjacency_matrix[edge.dest()].push_back(edge.inverse(vertex_id));
+                for (vertex_ID_t i = 0; i < new_edges; i++) {
+                    edges_offset[adjacency_list[i].dest() + 1]++;
                 }
             }
+            edges_offset[vertex_id + 1] += edges_offset[vertex_id] + new_edges;
         }
-        return num_edges;
+        return edges_offset;
     }
 
     // create CSR
-    Graph<Vertex_t, Edge_t, Graph_t> FlattenVectorGraph(vertex_ID_t num_edges,
-            VectorGraph<Vertex_t, Edge_t> &vg, std::vector<vertex_ID_t> &degrees) {
+    Graph<Vertex_t, Edge_t, Graph_t> FlattenVectorGraph( VectorGraph<Vertex_t, Edge_t> &vg,
+            std::vector<edge_ID_t> &edges_offset) {
         Vertex* vertices = (Vertex*)malloc((vg.matrix.size() + 1) * sizeof(Vertex));
-        Edge_t* edges = (Edge_t*)malloc(num_edges * sizeof(Edge_t));
-
-        edge_ID_t edges_index = 0;
+        Edge_t* edges = (Edge_t*)malloc(edges_offset.back() * sizeof(Edge_t));
+        
+        // fill in vertices
         vertex_ID_t vertex_id = 0;
         for (; vertex_id < vg.matrix.size(); vertex_id++) {
-            auto edges_begin = edges + edges_index;
-            vertex_ID_t degree = degrees[vertex_id];
+            auto edges_begin = edges + edges_offset[vertex_id];
             if constexpr (EmptyVertexType<Vertex_t>)
                 new (&vertices[vertex_id]) Vertex(edges_begin);
             else   
                 new (&vertices[vertex_id]) Vertex(vg.vertices[vertex_id], edges_begin);
-            for (vertex_ID_t i = 0; i < degree; i++) {
-                edges[edges_index++] = vg.matrix[vertex_id][i];
-            }
         }
-
-        // end vertex
-        auto edges_begin = edges + edges_index;
+        // end vertex (only used for its edge offset)
+        auto edges_begin = edges + edges_offset[vertex_id];
         if constexpr (EmptyVertexType<Vertex_t>)
             new (&vertices[vertex_id]) Vertex(edges_begin);
         else
             new (&vertices[vertex_id]) Vertex(Vertex_t(), edges_begin);
 
-        return Graph<Vertex_t, Edge_t, Graph_t>(vg.matrix.size(), vertices, num_edges, edges);
+        
+        // fill in edges
+        for (vertex_ID_t vertex_id = 0; vertex_id < vg.matrix.size(); vertex_id++) {
+            for (auto &edge : vg.matrix[vertex_id]) {
+                edges[edges_offset[vertex_id]++] = edge;
+                if constexpr (Graph_t == GraphType::UNDIRECTED) {
+                    edges[edges_offset[edge.dest()]++] = edge.inverse(vertex_id);
+                }
+            }
+        }
+        return Graph<Vertex_t, Edge_t, Graph_t>(vg.matrix.size(), vertices, edges_offset.back(), edges);
     }
 
 

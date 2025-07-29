@@ -47,6 +47,7 @@ protected:
 // Contains destination and optional weight + mutable data
 // Mutable Data stored inplace - for large data sizes, use a seperate array indexed by edgeIndex.
 struct EdgeUW {
+    EdgeUW() : dest_(0) {}  // Default constructor
     EdgeUW(vertex_ID_t dest) : dest_(dest) {}
     using data_type = void;
     vertex_ID_t dest() const { return dest_; }
@@ -58,6 +59,7 @@ protected:
 #pragma pack (push, 4)
 template<typename Data_t>
 struct EdgeUWD : public EdgeUW {
+    EdgeUWD() : EdgeUW(), data_() {}  // Default constructor
     EdgeUWD(vertex_ID_t dest, Data_t data) : EdgeUW(dest), data_(data) {}
     using data_type = Data_t;
     Data_t &data() { return data_; }
@@ -67,6 +69,7 @@ protected:
 };
 #pragma pack (pop)
 struct EdgeW : public EdgeUW {
+    EdgeW() : EdgeUW(), weight_(0.0) {}  // Default constructor
     EdgeW(vertex_ID_t dest, weight_t weight) : EdgeUW(dest), weight_(weight) {}
     weight_t weight() const { return weight_; }
     EdgeW inverse(vertex_ID_t src) const { return(EdgeW(src, weight_)); }
@@ -76,6 +79,7 @@ protected:
 #pragma pack (push, 4)
 template<typename Data_t>
 struct EdgeWD : public EdgeUWD<Data_t> {
+    EdgeWD() : EdgeUWD<Data_t>(), weight_(0.0) {}  // Default constructor
     EdgeWD(vertex_ID_t dest, weight_t weight, Data_t data) :
         EdgeUWD<Data_t>(dest, data), weight_(weight) {}
     weight_t weight() const { return weight_; }

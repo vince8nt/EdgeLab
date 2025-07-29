@@ -53,7 +53,9 @@ private:
         for (edge_ID_t i = 0; i < num_edges_; i++) {
             vertex_ID_t src = vertex_dist(gen);
             vertex_ID_t dest = vertex_dist(gen);
-            // if (src == dest) continue; // disable self loops
+            if constexpr (Graph_t == GraphType::UNDIRECTED) {
+                if (src == dest) continue; // disable self loops for undirected graphs
+            }
             if constexpr (WeightedEdgeType<Edge_t>) {
                 weight_t weight = 2 - weight_dist(gen);
                 if constexpr (Graph_t == GraphType::UNDIRECTED) {
