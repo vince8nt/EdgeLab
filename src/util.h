@@ -12,6 +12,8 @@
 #include <chrono>
 #include <memory>
 
+#define DEBUG 1 // 1 for debug, 0 for release
+
 // Forward declaration
 class Loader;
 
