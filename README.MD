@@ -183,7 +183,7 @@ v 3 1
 1 1 2 2 3
 6 5 3 1 4 // vertexID: 2, weight: 6, edges: [[weight: 5, dest: 3], [weight: 1, dest: 4]]
 3 2 4
-4 3 5
+4 3 1
 ```
 
 - **ELAB (EdgeLab Binary):** Custom binary format
