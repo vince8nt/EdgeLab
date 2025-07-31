@@ -220,8 +220,9 @@ v 3 1
     - optimized to use 50% less space for undirected graphs vs symmetrized directed graphs
     - Platform-independent binary format
     - all numerical values are unsigned integer types (for well defined bit placement)
-    - 15 byte Header formatted as: `<flags>(3 bytes) <num vertices>(4 bytes) <num edges>(8 bytes)`
-        - Flag bytes specify the booleans: `<directed> <v weighted> <e weighted>`
+    - 16 byte Header formatted as: `<flags>(4 bytes) <num vertices>(4 bytes) <num edges>(8 bytes)`
+        - Flag bytes specify the booleans: `<directed> <v weighted> <e weighted> <unused>`
+        - The unused flag alligns the file's integers on a 4-byte boundary (for maximum performance)
     - Vertex info (repeated `<num vertices>` times):
         - Format: `<weight>(4 bytes)? <degree (num outgoing edges)>(4 bytes)`
     - Edges info (repeated `<num edges>` times):
@@ -233,8 +234,8 @@ v 3 1
             - ELAB `<num edges>` and `<degree>` values represent directed edge counts **after symmetrization**
             - Self loops are not possible for directed graphs
 ```c
-// ELAB header data
-0x00 0x01 0x01        // 3 x 8-bit flags for undirected graph with vertex and edge weights
+// ELAB header data (16 bytes)
+0x00 0x01 0x01 0x00   // 4 x 8-bit flags for undirected graph with vertex and edge weights
 0x00000004            // 32-bit vertex count for 4 vertices
 0x0000000000000006    // 64-bit edge count for 6 edges
 // ELAB vertex data
@@ -247,7 +248,7 @@ v 3 1
 0x00000005 0x00000002   0x00000003 0x00000003
 0x00000002 0x00000003 // Vertex 2 has 1 undirected edge (weight=2) to vertex 3
                       // Its edges to vertex 0 and 1 are not included since !(src < dest)
-// File size for this graph is 95 bytes
+// File size for this graph is 96 bytes
 ```
 
 ### Example Graph Type Combinations

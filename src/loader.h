@@ -165,10 +165,11 @@ private:
     }
 
     void load_head_ELAB(CLIOptions& opts) {
-        bool directed, v_weights, e_weights;
+        bool directed, v_weights, e_weights, unused;
         file_.read(reinterpret_cast<char*>(&directed), sizeof(bool));
         file_.read(reinterpret_cast<char*>(&v_weights), sizeof(bool));
         file_.read(reinterpret_cast<char*>(&e_weights), sizeof(bool));
+        file_.read(reinterpret_cast<char*>(&unused), sizeof(bool));
         opts.graph_type = directed ? GraphType::DIRECTED : GraphType::UNDIRECTED;
         opts.vertex_type = v_weights ? CLIVertexType::WEIGHTED : CLIVertexType::UNWEIGHTED;
         opts.edge_type = e_weights ? CLIEdgeType::WEIGHTED : CLIEdgeType::UNWEIGHTED;
