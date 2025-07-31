@@ -72,7 +72,7 @@ void benchmark_iteration(const Graph<Vertex_t, Edge_t, Graph_t>& graph,
                 mt19937 gen(rd());
                 uniform_int_distribution<vertex_ID_t> dis(0, graph.num_vertices() - 1);
                 
-                for (int i = 0; i < graph.num_vertices(); ++i) {
+                for (vertex_ID_t i = 0; i < graph.num_vertices(); ++i) {
                     vertex_ID_t v = dis(gen);
                     for (const auto& edge : graph[v]) {
                         total_edges += edge.dest();
