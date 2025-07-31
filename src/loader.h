@@ -268,7 +268,6 @@ private:
         Vertex* vertices = (Vertex*)malloc(vertices_size);
         Edge_t* edges = (Edge_t*)malloc(edges_size);
 
-
         // read vertex data into the upper portion of CSR
         // then overwrite with full vertex instantiations
         // TODO: change this to happen in chunks for better cache locality
@@ -317,14 +316,14 @@ private:
                 // TODO: test out modifying edge offsets in place and then correcting in a second pass
                     // less memory usage, but more time
                 for (vertex_ID_t i = 0; i < num_vertices_; i++) {
-                    Edge_t* edges_current = const_cast<Edge_t*>(vertices[i].edges_begin_) + pre_added_edges[i];
-                    Edge_t* edges_end = const_cast<Edge_t*>(vertices[i + 1].edges_begin_);
+                    Edge_t* edges_current = vertices[i].edges_begin_ + pre_added_edges[i];
+                    Edge_t* edges_end = vertices[i + 1].edges_begin_;
                     vertex_ID_t read_amount = (edges_end - edges_current) * e_read_size;
                     file_.read(reinterpret_cast<char*>(edges_current), read_amount);
                     for (Edge_t* it = edges_current; it < edges_end; it++) {
                         Edge_t e = *it;
                         vertex_ID_t dest = e.dest();
-                        *(const_cast<Edge_t*>(vertices[dest].edges_begin_) + pre_added_edges[dest]++) = e.inverse(i);
+                        *(vertices[dest].edges_begin_ + pre_added_edges[dest]++) = e.inverse(i);
                     }
                 }
             }

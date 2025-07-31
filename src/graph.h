@@ -16,16 +16,16 @@ public:
     #pragma pack (push, 4)
     struct Vertex : public Vertex_t {
         // For empty vertex - relies on Empty Base Class Optimization (EBCO)
-        Vertex(const Edge_t* edges_begin) requires EmptyVertexType<Vertex_t> :
+        Vertex(Edge_t* edges_begin) requires EmptyVertexType<Vertex_t> :
                 edges_begin_(edges_begin) {}
 
         // For non empty vertex
-        Vertex(const Vertex_t& vertex, const Edge_t* edges_begin)
+        Vertex(const Vertex_t& vertex, Edge_t* edges_begin)
                 requires NonEmptyVertexType<Vertex_t> :
                 Vertex_t(vertex), edges_begin_(edges_begin) {}
 
         // starting location of our outgoing edges in graph's edges_ array
-        const Edge_t* edges_begin_; // requires EmptyVertexType<Vertex_t>;
+        Edge_t* edges_begin_; // requires EmptyVertexType<Vertex_t>;
         // alignas(vertex_ID_t) const Edge_t* edges_begin_ requires NonEmptyVertexType<Vertex_t>;
         // TODO(vince): ensure dense packing of Vertex attributes
     };
@@ -57,8 +57,8 @@ public:
         // vertex_ID_t ID() const { return csr_loc_ - vertices_; } // doesn't have access to nonstatic Graph vars
 
         // Edge iteration support
-        const Edge_t* begin() const { return csr_loc_->edges_begin_; }
-        const Edge_t* end() const { return (csr_loc_ + 1)->edges_begin_; }
+        Edge_t* begin() const { return csr_loc_->edges_begin_; }
+        Edge_t* end() const { return (csr_loc_ + 1)->edges_begin_; }
 
         // Edge indexing support
         vertex_ID_t degree() const { return end() - begin(); }
@@ -71,7 +71,7 @@ public:
                 return edge.dest() < target;
             });
         }
-        const Edge_t* get_edge_to(vertex_ID_t target_id) const {
+        Edge_t* get_edge_to(vertex_ID_t target_id) const {
             auto it = std::lower_bound(begin(), end(), target_id,
                 [](const Edge_t& edge, vertex_ID_t target) {
                     return edge.dest() < target;
