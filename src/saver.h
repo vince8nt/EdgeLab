@@ -205,68 +205,64 @@ private:
         }
     }
 
-    // Save ELAB format (binary format)
+    // Save ELAB format
+    // most space and time efficient way to store and load graphs
     void save_ELAB(const Graph<Vertex_t, Edge_t, Graph_t>& graph, std::ofstream& file) {
-        // Write header: flags(3 bytes) + num_vertices(4 bytes) + num_edges(8 bytes)
-        bool directed = (Graph_t == GraphType::DIRECTED);
-        bool v_weights = WeightedVertexType<Vertex_t>;
-        bool e_weights = WeightedEdgeType<Edge_t>;
-        
-        file.write(reinterpret_cast<const char*>(&directed), sizeof(bool));
-        file.write(reinterpret_cast<const char*>(&v_weights), sizeof(bool));
-        file.write(reinterpret_cast<const char*>(&e_weights), sizeof(bool));
-        
+        bool directed = Graph_t == GraphType::DIRECTED;
+        bool weighted_vertices = WeightedVertexType<Vertex_t>;
+        bool weighted_edges = WeightedEdgeType<Edge_t>;
+        bool unused = false;
         vertex_ID_t num_vertices = graph.num_vertices();
-        edge_ID_t num_edges = graph.num_edges();
-        if constexpr (Graph_t == GraphType::UNDIRECTED) {
-            // graph returns num directed edges / 2
-            // we will save this number of edges (1 direction for each undirected edge)
-            // but the 'num_edges' value we save is actually
-                // the total number of directed edges there will be after symmetrizing
-            num_edges = num_edges * 2;
-        }
-        
+        edge_ID_t num_edges = directed ? graph.num_edges() : graph.num_edges() * 2;
+        file.write(reinterpret_cast<const char*>(&directed), sizeof(bool));
+        file.write(reinterpret_cast<const char*>(&weighted_vertices), sizeof(bool));
+        file.write(reinterpret_cast<const char*>(&weighted_edges), sizeof(bool));
+        file.write(reinterpret_cast<const char*>(&unused), sizeof(bool));
         file.write(reinterpret_cast<const char*>(&num_vertices), sizeof(vertex_ID_t));
         file.write(reinterpret_cast<const char*>(&num_edges), sizeof(edge_ID_t));
         
-        // Write vertex information
-        edge_ID_t cumulative_edges = 0;
-        for (vertex_ID_t v = 0; v <= num_vertices; v++) {
+        // write vertices
+        // TODO: do in chunks for better cache locality and to use less memory
+        constexpr size_t v_write_size = sizeof(vertex_ID_t) +
+            (WeightedVertexType<Vertex_t> ? sizeof(weight_t) : 0);
+        size_t v_write_amount = num_vertices * v_write_size;
+        char* v_write_buffer = new char[v_write_amount];
+        char* v_write_loc = v_write_buffer;
+        for (vertex_ID_t i = 0; i < num_vertices; i++) {
             if constexpr (WeightedVertexType<Vertex_t>) {
-                weight_t weight = (v < num_vertices) ? graph[v].weight() : 0;
-                file.write(reinterpret_cast<const char*>(&weight), sizeof(weight_t));
+                *v_write_loc = graph[i].weight();
+                v_write_loc += sizeof(weight_t);
             }
-            
-            edge_ID_t edges_offset = (v < num_vertices) ? cumulative_edges : num_edges;
-            file.write(reinterpret_cast<const char*>(&edges_offset), sizeof(edge_ID_t));
-            
-            if (v < num_vertices) {
-                cumulative_edges += graph[v].degree();
-            }
+            *v_write_loc = graph[i].degree();
+            v_write_loc += sizeof(vertex_ID_t);
         }
+        file.write(v_write_buffer, v_write_amount);
+        delete[] v_write_buffer;
         
-        // Write edge information
-        for (vertex_ID_t v = 0; v < num_vertices; v++) {
-            for (const auto& edge : graph[v]) {
-                vertex_ID_t dest = edge.dest();
-                if constexpr (Graph_t == GraphType::UNDIRECTED) {
-                    // For undirected, only write edges where v < dest to avoid duplicates
-                    if (v < dest) {
-                        if constexpr (WeightedEdgeType<Edge_t>) {
-                            weight_t weight = edge.weight();
-                            file.write(reinterpret_cast<const char*>(&weight), sizeof(weight_t));
-                        }
-                        file.write(reinterpret_cast<const char*>(&dest), sizeof(vertex_ID_t));
-                    }
-                } else {
-                    // For directed, write all edges
-                    if constexpr (WeightedEdgeType<Edge_t>) {
-                        weight_t weight = edge.weight();
-                        file.write(reinterpret_cast<const char*>(&weight), sizeof(weight_t));
-                    }
-                    file.write(reinterpret_cast<const char*>(&dest), sizeof(vertex_ID_t));
+        // write edges
+        constexpr size_t e_write_size = sizeof(vertex_ID_t) + 
+            (WeightedEdgeType<Edge_t> ? sizeof(weight_t) : 0);
+        // write edges directly into file (doesn't work for DataEdges)
+        if constexpr (e_write_size == sizeof(Edge_t)) {
+            if constexpr (Graph_t == GraphType::DIRECTED) {
+                file.write(reinterpret_cast<const char*>(graph[0].begin()), e_write_size * num_edges);
+            }
+            else {
+                for (vertex_ID_t i = 0; i < num_vertices; i++) {
+                    Edge_t* it = graph[i].begin();
+                    while (it != graph[i].end() and it->dest() <= i)
+                        it++;
+                    size_t write_amount = std::distance(it, graph[i].end()) * e_write_size;
+                    file.write(reinterpret_cast<const char*>(it), write_amount);
                 }
             }
+        }
+        else {
+            if constexpr (DataEdgeType<Edge_t>)
+                std::cerr << "Data Edge writing currently unsupported by ELAB" << std::endl;
+            else
+                std::cerr << "Uncompacted Edge Struct Error" << std::endl;
+            exit(1);
         }
     }
 };
