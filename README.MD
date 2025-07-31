@@ -79,11 +79,12 @@ EdgeLab supports a comprehensive set of graph types through flexible templating.
 ### Graph File Formats
 
 EdgeLab supports multiple file formats for loading and saving graphs.
-```markdown
-# To aid in explaining graph file formats, this graph "mini" is provided as an example
-## Each example file encoding represents a variation of this graph
-### (potentially dropping vertex weights, edge weights, and/or directedness)
-# A complete list of "mini" encoding variations can be found in the graphs/ directory
+
+- To aid in explaining graph file formats, this graph "mini" is provided as an example
+    - Each example file encoding represents a variation of this graph
+        - (potentially dropping vertex weights, edge weights, and/or directedness)
+- A complete list of "mini" encoding variations can be found in the graphs/ directory
+```
 [ ID: 0 ]        wt: 1      [ ID: 1 ]
 [ wt: 1 ]  -------------->  [ wt: 6 ]
                           
@@ -114,7 +115,7 @@ EdgeLab supports multiple file formats for loading and saving graphs.
     - Defaults to undirected, but can be set to directed via comment on the first line
     - Edges are formatted as: `<source> <destination>`
     - Vertices must be unsigned 32-bit integers.
-    - Vertices do not need to be densely packed, but will be inneficient if very sparse
+    - Vertices must be (mostly) densely packed (gaps are included as vertices with no edges)
     - Edges can come in any order and duplicate edges are ok
 ```markdown
 # directed
@@ -130,6 +131,7 @@ EdgeLab supports multiple file formats for loading and saving graphs.
     - Weighted edges, unweighted vertices
     - Edges are formatted as: `<source> <destination> <weight>`
     - Weights must be unsigned 32-bit integers.
+    - If duplicate edges with differing weights are listed, the smallest weight will be used
 ```markdown
 # directed
 0 1 1
@@ -177,29 +179,44 @@ v 3 1
 
 - **GRAPH (METIS Graph):** METIS graph format
     - Supports weighted/unweighted edges and vertices
-    - All graphs are assumed directed (but can be made fully symmetrized to act undirected)
+    - All graphs are assumed directed unless fully symmetrized (with symmetric edge weights)
+        - Directedness is checked and set as final step in loading
     - Standard format for graph partitioning
-    - vertex IDs must be positive integers (excluding 0)
-    - Header formatted as `<num vertices> <num edges> <flag>?`
+    - Vertex IDs must be positive integers (excluding 0)
+        - When loaded, vertex IDs will be shifted down by 1
+    - Header line formatted as: `<num vertices> <num edges> <flag>?`
     - Flag is an optional parameter that defines if vertices/edges are weighted
-    - Flag consists of 2 binary digits `<v_weights><e_weights>`
+    - Flag consists of 2 binary digits `<v_weighted><e_weighted>`
     - The body is written in sparse row format with each line representing a vertex (1-based)
     - Each line consists of space seperated unsigned integers
     - For weighted vertices, the first number of each line is the vertex weight
-    - Otherwise, lines are a list of outgoing edges (sorted by strictly increasing vertex ID).
+    - Otherwise, lines are a list of outgoing edges (any order is allowed)
     - For weighted edges, each edge is of the form `<weight> <destination>`
-```c
-// A METIS graph equavilant to the VWEL example (vertex IDs shifted up by 1)
-4 6 11     // header line for: 4 vertices, 6 edges, weighted vertices and edges
+    - Comments can be added via `%` (must be the first character on the line)
+    - EdgeLab is lenient when parsing GRAPH files to allow for easier readability/editing:
+        - It recognizes header lines formatted as `<flag>?` (without specifying vertex/edge counts)
+            - To easily add/remove components by hand (at the cost of additional loading time)
+        - It recognizes flags consisting of 3 binary digits: `<v_weighted><e_weighted><undirected>`
+            - Avoids the need to manually symmetrize every edge for undirected graphs
+        - It allows duplicate edges
+            - If duplicate edges with differing weights are listed, the smallest weight will be used
+        - Caution: these features will likely break cross platform compatability when used
+```tex
+% header line for: 4 vertices, 6 edges, weighted vertices and edges
+4 6 11
+% vertexID: 1
 1 1 2 2 3
-6 5 3 1 4 // vertexID: 2, weight: 6, edges: [[weight: 5, dest: 3], [weight: 1, dest: 4]]
+% vertexID: 2, weight: 6, edges: [[weight: 5, dest: 3], [weight: 1, dest: 4]]
+6 5 3 1 4
+% vertexID: 3
 3 2 4
+% vertexID: 3
 4 3 1
 ```
 
 - **ELAB (EdgeLab Binary):** Custom binary format
     - Supports all graph types (directed/undirected, weighted/unweighted)
-    - Fast loading and saving with small file sizes
+    - Fast loading and saving with small file sizes (especially for large sparse graphs)
     - optimized to use 50% less space for undirected graphs vs symmetrized directed graphs
     - Platform-independent binary format
     - all numerical values are unsigned integer types (for well defined bit placement)
@@ -228,8 +245,9 @@ v 3 1
 // ELAB edge data
 0x00000001 0x00000001   0x00000002 0x00000002   0x00000003 0x00000003
 0x00000005 0x00000002   0x00000003 0x00000003
-0x00000002 0x00000003
-// Total ELAB file size is 95 bytes
+0x00000002 0x00000003 // Vertex 2 has 1 undirected edge (weight=2) to vertex 3
+                      // Its edges to vertex 0 and 1 are not included since !(src < dest)
+// File size for this graph is 95 bytes
 ```
 
 ### Example Graph Type Combinations
