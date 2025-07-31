@@ -262,43 +262,47 @@ private:
     Graph<Vertex_t, Edge_t, Graph_t> load_body_ELAB() {
         using Vertex = typename Graph<Vertex_t, Edge_t, Graph_t>::Vertex;
         
-        Vertex* vertices = (Vertex*)malloc((num_vertices_ + 1) * sizeof(Vertex));
-        Edge_t* edges = (Edge_t*)malloc(num_edges_ * sizeof(Edge_t));
-        std::vector<Edge_t*> offsets; // used for symmetrizing undirected graphs
-        offsets.reserve(num_vertices_ + 1);
+        // permenant graph memory allocation
+        size_t vertices_size = (num_vertices_ + 1) * sizeof(Vertex);
+        size_t edges_size = num_edges_ * sizeof(Edge_t);
+        Vertex* vertices = (Vertex*)malloc(vertices_size);
+        Edge_t* edges = (Edge_t*)malloc(edges_size);
 
-        // read vertices
-        constexpr size_t v_read_size = sizeof(edge_ID_t) + 
+
+        // read vertex data into the upper portion of CSR
+        // then overwrite with full vertex instantiations
+        // TODO: change this to happen in chunks for better cache locality
+        constexpr size_t v_read_size = sizeof(vertex_ID_t) +
             (WeightedVertexType<Vertex_t> ? sizeof(weight_t) : 0);
-        // read vertices directly into CSR (doesn't work for DataVertices)
-        if constexpr (v_read_size == sizeof(Vertex)) {
-            file_.read(reinterpret_cast<char*>(vertices), v_read_size * (num_vertices_ + 1));
-            // set edge offsets
-            for (vertex_ID_t i = 0; i < num_vertices_ + 1; i++) {
-                vertices[i].edges_begin_ = edges + reinterpret_cast<edge_ID_t>(vertices[i].edges_begin_);
-                if constexpr (Graph_t == GraphType::UNDIRECTED)
-                    offsets.push_back(const_cast<Edge_t*>(vertices[i].edges_begin_));
+        size_t v_read_amount = num_vertices_ * v_read_size;
+        char* v_read_loc = reinterpret_cast<char*>(vertices + vertices_size - v_read_amount);
+        file_.read(v_read_loc, v_read_amount);
+        Edge_t* edges_offset = edges;
+        for (vertex_ID_t i = 0; i < num_vertices_; i++) {
+            vertex_ID_t degree;
+            if constexpr (WeightedVertexType<Vertex_t>) {
+                weight_t weight = *reinterpret_cast<weight_t*>(v_read_loc);
+                v_read_loc += sizeof(weight_t);
+                degree = *reinterpret_cast<vertex_ID_t*>(v_read_loc);
+                v_read_loc += sizeof(vertex_ID_t);
+                new (&vertices[i]) Vertex(weight, edges_offset);
             }
+            else {
+                degree = *reinterpret_cast<vertex_ID_t*>(v_read_loc);
+                v_read_loc += sizeof(vertex_ID_t);
+                new (&vertices[i]) Vertex(edges_offset);
+            }
+            edges_offset += degree;
         }
-        // otherwise read 1 at a time (change this later to a buffered approach)
+        // add ending vertex
+        if constexpr (WeightedVertexType<Vertex_t>) {
+            new (&vertices[num_vertices_]) Vertex(0, edges_offset);
+        }
         else {
-            for (vertex_ID_t i = 0; i < num_vertices_ + 1; i++) {
-                static_assert(DataVertexType<Vertex_t>, "Uncompacted Vertex");
-                edge_ID_t edges_offset;
-                if constexpr (WeightedVertexType<Vertex_t>) {
-                    weight_t w;
-                    file_.read(reinterpret_cast<char*>(&w), sizeof(weight_t));
-                    file_.read(reinterpret_cast<char*>(&edges_offset), sizeof(edge_ID_t));
-                    new (&vertices[i]) Vertex(w, edges + edges_offset);
-                } else {
-                    file_.read(reinterpret_cast<char*>(&edges_offset), sizeof(edge_ID_t));
-                    new (&vertices[i]) Vertex(edges + edges_offset);
-                }
-                if constexpr (Graph_t == GraphType::UNDIRECTED)
-                    offsets.push_back(const_cast<Edge_t*>(vertices[i].edges_begin_));
-            }
+            new (&vertices[num_vertices_]) Vertex(edges_offset);
         }
-
+        
+        
         // read edges
         constexpr size_t e_read_size = sizeof(vertex_ID_t) + 
             (WeightedEdgeType<Edge_t> ? sizeof(weight_t) : 0);
@@ -308,55 +312,29 @@ private:
                 file_.read(reinterpret_cast<char*>(edges), e_read_size * num_edges_);
             }
             else {
+                // temporary memory used for symmetrizing undirected graphs
+                std::vector<vertex_ID_t> pre_added_edges(num_vertices_);
+                // TODO: test out modifying edge offsets in place and then correcting in a second pass
+                    // less memory usage, but more time
                 for (vertex_ID_t i = 0; i < num_vertices_; i++) {
-                    vertex_ID_t read_amount =
-                        std::distance(offsets[i], const_cast<Edge_t*>(vertices[i].edges_begin_));
-                    file_.read(reinterpret_cast<char*>(offsets[i]), read_amount);
-                    for (vertex_ID_t j = 0; j < read_amount; j++) {
-                        Edge_t edge = *offsets[i+j];
-                        *(offsets[edge.dest()]++) = edge.inverse(i);
+                    Edge_t* edges_current = const_cast<Edge_t*>(vertices[i].edges_begin_) + pre_added_edges[i];
+                    Edge_t* edges_end = const_cast<Edge_t*>(vertices[i + 1].edges_begin_);
+                    vertex_ID_t read_amount = (edges_end - edges_current) * e_read_size;
+                    file_.read(reinterpret_cast<char*>(edges_current), read_amount);
+                    for (Edge_t* it = edges_current; it < edges_end; it++) {
+                        Edge_t e = *it;
+                        vertex_ID_t dest = e.dest();
+                        *(const_cast<Edge_t*>(vertices[dest].edges_begin_) + pre_added_edges[dest]++) = e.inverse(i);
                     }
                 }
             }
         }
-        // otherwise read 1 at a time (change this later to a buffered approach)
         else {
-            static_assert(DataEdgeType<Edge_t>, "Uncompacted Edge");
-            if constexpr (Graph_t == GraphType::DIRECTED) {
-                for (edge_ID_t i = 0; i < num_edges_; i++) {
-                    vertex_ID_t dest;
-                    weight_t w;
-                    file_.read(reinterpret_cast<char*>(&dest), sizeof(vertex_ID_t));
-                    if constexpr (WeightedEdgeType<Edge_t>) {
-                        file_.read(reinterpret_cast<char*>(&w), sizeof(weight_t));
-                        new (&edges[i]) Edge_t(dest, w);
-                    }
-                    else {
-                        new (&edges[i]) Edge_t(dest);
-                    }
-                }
-            }
-            
-            else {
-                for (vertex_ID_t i = 0; i < num_vertices_; i++) {
-                    vertex_ID_t read_amount =
-                        std::distance(offsets[i], const_cast<Edge_t*>(vertices[i].edges_begin_));
-                    for (vertex_ID_t j = 0; j < read_amount; j++) {
-                        vertex_ID_t dest;
-                        weight_t w;
-                        file_.read(reinterpret_cast<char*>(&dest), sizeof(vertex_ID_t));
-                        if constexpr (WeightedEdgeType<Edge_t>) {
-                            file_.read(reinterpret_cast<char*>(&w), sizeof(weight_t));
-                            new (offsets[i]++) Edge_t(dest, w);
-                        }
-                        else {
-                            new (offsets[i]++) Edge_t(dest);
-                        }
-                        Edge_t edge = *offsets[i+j];
-                        *(offsets[edge.dest()]++) = edge.inverse(i);
-                    }
-                }
-            }
+            if constexpr (DataEdgeType<Edge_t>)
+                std::cerr << "Data Edge loading currently unsupported by ELAB" << std::endl;
+            else
+                std::cerr << "Uncompacted Edge Struct Error" << std::endl;
+            exit(1);
         }
 
         file_.close();
