@@ -23,10 +23,35 @@ fi
 
 # Check if test_load_save executable exists
 EXECUTABLE_PATH="$BUILD_DIR/test_load_save"
+echo "Checking for executable: $EXECUTABLE_PATH"
 if [ ! -f "$EXECUTABLE_PATH" ]; then
     echo "Error: test_load_save executable not found in build directory"
     echo "Please build the project first"
     exit 1
+fi
+
+# Check if executable is actually executable
+if [ ! -x "$EXECUTABLE_PATH" ]; then
+    echo "Error: test_load_save executable is not executable"
+    echo "Permissions: $(ls -la "$EXECUTABLE_PATH")"
+    exit 1
+fi
+
+echo "Found executable: $EXECUTABLE_PATH"
+echo "Executable permissions: $(ls -la "$EXECUTABLE_PATH")"
+
+# Test if executable can be run
+echo "Testing executable with --help..."
+if "$EXECUTABLE_PATH" --help > /dev/null 2>&1; then
+    echo "Executable test passed"
+else
+    echo "Executable test failed - trying to run without arguments..."
+    if "$EXECUTABLE_PATH" > /dev/null 2>&1; then
+        echo "Executable runs without arguments"
+    else
+        echo "Executable cannot be run"
+        exit 1
+    fi
 fi
 
 # Check if temp directory already exists - if so, fail
@@ -79,6 +104,8 @@ for graph_type in "${graph_types[@]}"; do
         echo "  Testing EL format..."
         el_path="$TEMP_DIR/$el_file"
         
+        echo "Running: $EXECUTABLE_PATH --graph-type $graph_type --vertex-type $vertex_type --edge-type $edge_type --scale 8 --degree 8 --gen-type erdos_renyi --save-file $el_path"
+        
         if "$EXECUTABLE_PATH" \
             --graph-type "$graph_type" \
             --vertex-type "$vertex_type" \
@@ -90,7 +117,7 @@ for graph_type in "${graph_types[@]}"; do
             echo "  EL format passed"
             ((passed_count++))
         else
-            echo "  EL format failed"
+            echo "  EL format failed with exit code $?"
             exit 1
         fi
         
@@ -98,6 +125,8 @@ for graph_type in "${graph_types[@]}"; do
         ((test_count++))
         echo "  Testing ELAB format..."
         elab_path="$TEMP_DIR/$elab_file"
+        
+        echo "Running: $EXECUTABLE_PATH --graph-type $graph_type --vertex-type $vertex_type --edge-type $edge_type --scale 8 --degree 8 --gen-type erdos_renyi --save-file $elab_path"
         
         if "$EXECUTABLE_PATH" \
             --graph-type "$graph_type" \
@@ -110,7 +139,7 @@ for graph_type in "${graph_types[@]}"; do
             echo "  ELAB format passed"
             ((passed_count++))
         else
-            echo "  ELAB format failed"
+            echo "  ELAB format failed with exit code $?"
             exit 1
         fi
         
