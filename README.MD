@@ -323,11 +323,8 @@ cmake --build .
 ./breadth_first_search_test
 ./verify_undirected --edge-type unweighted --scale 8 --degree 8 --gen-type erdos_renyi
 
-# Run load/save tests (Windows PowerShell)
-powershell -ExecutionPolicy Bypass -File ../test/test_load_save.ps1
-
-# Run load/save tests (Linux/macOS)
-./test/test_load_save.sh
+# Run load/save tests (cross-platform Python)
+python3 ../test/test_load_save.py
 ```
 
 The load/save tests verify that graphs can be saved and loaded correctly across all combinations of:

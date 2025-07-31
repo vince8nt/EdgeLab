@@ -76,4 +76,4 @@ jobs:
         # - Vertex types: weighted/unweighted  
         # - Edge types: weighted/unweighted
         # - File formats: EL (text) and ELAB (binary)
-        ./test/test_load_save.sh
+        python3 ./test/test_load_save.py
