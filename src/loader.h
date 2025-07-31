@@ -11,6 +11,7 @@
 #include <vector>
 #include <tuple>
 #include <algorithm>
+#include <cassert>
 
 enum class FileType {
 //  EXT    //    data    |        format        |   graph_t   |   edge_t   |  vertex_t  
@@ -58,8 +59,12 @@ public:
     // Main entry: takes a file path, checks existence, determines extension, and sets opts accordingly
     void load_graph_header(CLIOptions& opts) {
         file_type_ = GetFileExtension(opts.load_file_path);
-        // open file
-        file_ = std::ifstream(opts.load_file_path);
+        // open file in binary mode for ELAB format
+        if (file_type_ == FileType::ELAB) {
+            file_ = std::ifstream(opts.load_file_path, std::ios::binary);
+        } else {
+            file_ = std::ifstream(opts.load_file_path);
+        }
         if (!file_.is_open()) {
             std::cerr << "Failed to open file: " << opts.load_file_path << std::endl;
             exit(1);
@@ -274,7 +279,7 @@ private:
         constexpr size_t v_read_size = sizeof(vertex_ID_t) +
             (WeightedVertexType<Vertex_t> ? sizeof(weight_t) : 0);
         size_t v_read_amount = num_vertices_ * v_read_size;
-        char* v_read_loc = reinterpret_cast<char*>(vertices + vertices_size - v_read_amount);
+        char* v_read_loc = reinterpret_cast<char*>(vertices) + vertices_size - v_read_amount;
         file_.read(v_read_loc, v_read_amount);
         Edge_t* edges_offset = edges;
         for (vertex_ID_t i = 0; i < num_vertices_; i++) {
@@ -318,12 +323,14 @@ private:
                 for (vertex_ID_t i = 0; i < num_vertices_; i++) {
                     Edge_t* edges_current = vertices[i].edges_begin_ + pre_added_edges[i];
                     Edge_t* edges_end = vertices[i + 1].edges_begin_;
-                    vertex_ID_t read_amount = (edges_end - edges_current) * e_read_size;
+                    vertex_ID_t read_amount = std::distance(edges_current, edges_end) * e_read_size;
+                    if (read_amount == 0)
+                        continue;
                     file_.read(reinterpret_cast<char*>(edges_current), read_amount);
-                    for (Edge_t* it = edges_current; it < edges_end; it++) {
-                        Edge_t e = *it;
+                    for (Edge_t* it = edges_current; it != edges_end; it++) {
+                        Edge_t &e = *it;
                         vertex_ID_t dest = e.dest();
-                        *(vertices[dest].edges_begin_ + pre_added_edges[dest]++) = e.inverse(i);
+                        vertices[dest].edges_begin_[pre_added_edges[dest]++] = e.inverse(i);
                     }
                 }
             }

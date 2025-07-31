@@ -8,6 +8,7 @@
 #include "graph_comp.h"
 #include "graph.h"
 #include "loader.h"
+#include <cassert>
 
 template<NonDataVertexType Vertex_t, NonDataEdgeType Edge_t, GraphType Graph_t>
 class Saver {
@@ -27,8 +28,8 @@ public:
             exit(1);
         }
 
-        // Open file for writing
-        std::ofstream file(filepath);
+        // Open file for writing (must be binary for ELAB)
+        std::ofstream file(filepath, std::ios::binary);
         if (!file.is_open()) {
             std::cerr << "Failed to open file for writing: " << filepath << std::endl;
             exit(1);
@@ -230,10 +231,10 @@ private:
         char* v_write_loc = v_write_buffer;
         for (vertex_ID_t i = 0; i < num_vertices; i++) {
             if constexpr (WeightedVertexType<Vertex_t>) {
-                *v_write_loc = graph[i].weight();
+                *reinterpret_cast<weight_t*>(v_write_loc) = graph[i].weight();
                 v_write_loc += sizeof(weight_t);
             }
-            *v_write_loc = graph[i].degree();
+            *reinterpret_cast<vertex_ID_t*>(v_write_loc) = graph[i].degree();
             v_write_loc += sizeof(vertex_ID_t);
         }
         file.write(v_write_buffer, v_write_amount);
@@ -252,8 +253,10 @@ private:
                     Edge_t* it = graph[i].begin();
                     while (it != graph[i].end() and it->dest() <= i)
                         it++;
+                    if (it == graph[i].end())
+                        continue;
                     size_t write_amount = std::distance(it, graph[i].end()) * e_write_size;
-                    file.write(reinterpret_cast<const char*>(it), write_amount);
+                    file.write(reinterpret_cast<char*>(it), write_amount);
                 }
             }
         }

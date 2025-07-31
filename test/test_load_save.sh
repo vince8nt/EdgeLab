@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Bash script for testing load/save functionality
 # Exit on any error
 set -e
 
@@ -21,8 +22,9 @@ if [ ! -d "$BUILD_DIR" ]; then
 fi
 
 # Check if test_load_save executable exists
-if [ ! -f "$BUILD_DIR/test_load_save.exe" ]; then
-    echo "Error: test_load_save.exe not found in build directory"
+EXECUTABLE_PATH="$BUILD_DIR/test_load_save"
+if [ ! -f "$EXECUTABLE_PATH" ]; then
+    echo "Error: test_load_save executable not found in build directory"
     echo "Please build the project first"
     exit 1
 fi
@@ -36,19 +38,22 @@ fi
 
 # Create temp directory
 echo "Creating temp directory: $TEMP_DIR"
-mkdir "$TEMP_DIR"
+mkdir -p "$TEMP_DIR"
 
 # Define test configurations
-graph_types=('undirected' 'directed')
-vertex_types=('unweighted' 'weighted'   'unweighted' 'weighted')
-edge_types=('unweighted' 'unweighted' 'weighted'   'weighted')
-el_files=('temp.el' 'temp.vel' 'temp.wel' 'temp.vwel')
-elab_file='temp.elab'
+graph_types=("undirected" "directed")
+vertex_types=("unweighted" "weighted" "unweighted" "weighted")
+edge_types=("unweighted" "unweighted" "weighted" "weighted")
+el_files=("temp.el" "temp.vel" "temp.wel" "temp.vwel")
+elab_file="temp.elab"
 
-# Common generation parameters
-gen_params='--scale 8 --degree 8 --gen-type erdos_renyi --save-file'
+# Counter for tests (each configuration runs 2 tests: EL and ELAB)
+test_count=0
+passed_count=0
 
-# Function to clean up on exit
+echo "Starting load/save tests..."
+
+# Function to cleanup on exit
 cleanup() {
     echo "Cleaning up..."
     if [ -d "$TEMP_DIR" ]; then
@@ -57,14 +62,8 @@ cleanup() {
     fi
 }
 
-# Set up trap to clean up on script exit
+# Set trap to cleanup on exit
 trap cleanup EXIT
-
-# Counter for tests
-test_count=0
-passed_count=0
-
-echo "Starting load/save tests..."
 
 # Test all combinations of graph type, vertex type, edge type, and save file
 for graph_type in "${graph_types[@]}"; do
@@ -73,33 +72,45 @@ for graph_type in "${graph_types[@]}"; do
         edge_type="${edge_types[$i]}"
         el_file="${el_files[$i]}"
         
-        echo "Test $((++test_count)): Graph=$graph_type, Vertex=$vertex_type, Edge=$edge_type"
+        echo "Test $test_count: Graph=$graph_type, Vertex=$vertex_type, Edge=$edge_type"
         
         # Test with EL format
+        ((test_count++))
         echo "  Testing EL format..."
-        if "$BUILD_DIR/test_load_save.exe" \
+        el_path="$TEMP_DIR/$el_file"
+        
+        if "$EXECUTABLE_PATH" \
             --graph-type "$graph_type" \
             --vertex-type "$vertex_type" \
             --edge-type "$edge_type" \
-            $gen_params "$TEMP_DIR/$el_file"; then
-            echo "  ✓ EL format passed"
+            --scale 8 \
+            --degree 8 \
+            --gen-type erdos_renyi \
+            --save-file "$el_path"; then
+            echo "  EL format passed"
             ((passed_count++))
         else
-            echo "  ✗ EL format failed"
+            echo "  EL format failed"
             exit 1
         fi
         
         # Test with ELAB format
+        ((test_count++))
         echo "  Testing ELAB format..."
-        if "$BUILD_DIR/test_load_save.exe" \
+        elab_path="$TEMP_DIR/$elab_file"
+        
+        if "$EXECUTABLE_PATH" \
             --graph-type "$graph_type" \
             --vertex-type "$vertex_type" \
             --edge-type "$edge_type" \
-            $gen_params "$TEMP_DIR/$elab_file"; then
-            echo "  ✓ ELAB format passed"
+            --scale 8 \
+            --degree 8 \
+            --gen-type erdos_renyi \
+            --save-file "$elab_path"; then
+            echo "  ELAB format passed"
             ((passed_count++))
         else
-            echo "  ✗ ELAB format failed"
+            echo "  ELAB format failed"
             exit 1
         fi
         
@@ -114,11 +125,11 @@ echo "Passed: $passed_count"
 echo "Failed: $((test_count - passed_count))"
 echo "=========================================="
 
-if [ $passed_count -eq $test_count ]; then
-    echo "✓ All load/save tests passed!"
+if [ "$passed_count" -eq "$test_count" ]; then
+    echo "All load/save tests passed!"
     exit 0
 else
-    echo "✗ Some load/save tests failed!"
+    echo "Some load/save tests failed!"
     exit 1
 fi
     

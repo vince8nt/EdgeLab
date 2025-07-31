@@ -45,7 +45,7 @@ $edge_types = @('unweighted', 'unweighted', 'weighted', 'weighted')
 $el_files = @('temp.el', 'temp.vel', 'temp.wel', 'temp.vwel')
 $elab_file = 'temp.elab'
 
-# Counter for tests
+# Counter for tests (each configuration runs 2 tests: EL and ELAB)
 $test_count = 0
 $passed_count = 0
 
@@ -59,10 +59,10 @@ try {
             $edge_type = $edge_types[$i]
             $el_file = $el_files[$i]
             
-            $test_count++
             Write-Host "Test $test_count`: Graph=$graph_type, Vertex=$vertex_type, Edge=$edge_type"
             
             # Test with EL format
+            $test_count++
             Write-Host "  Testing EL format..."
             $el_path = Join-Path $TEMP_DIR $el_file
             $el_args = @(
@@ -85,6 +85,7 @@ try {
             }
             
             # Test with ELAB format
+            $test_count++
             Write-Host "  Testing ELAB format..."
             $elab_path = Join-Path $TEMP_DIR $elab_file
             $elab_args = @(

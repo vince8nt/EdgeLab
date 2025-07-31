@@ -315,6 +315,27 @@ cmake --build .
 
 **Note:** OpenCL support is optional. If OpenCL is not found, the build will succeed but the algorithms in `examples_opencl` will not be compiled. The system provides graceful fallback for environments without OpenCL support.
 
+### Running Tests
+
+```bash
+# Run all tests (from build directory)
+./triangle_counting_test
+./breadth_first_search_test
+./verify_undirected --edge-type unweighted --scale 8 --degree 8 --gen-type erdos_renyi
+
+# Run load/save tests (Windows PowerShell)
+powershell -ExecutionPolicy Bypass -File ../test/test_load_save.ps1
+
+# Run load/save tests (Linux/macOS)
+./test/test_load_save.sh
+```
+
+The load/save tests verify that graphs can be saved and loaded correctly across all combinations of:
+- Graph types: directed/undirected
+- Vertex types: weighted/unweighted
+- Edge types: weighted/unweighted  
+- File formats: EL (text) and ELAB (binary)
+
 ---
 
 ### Custom Data Types
@@ -375,6 +396,7 @@ long long breadth_first_search_opencl(Graph<Vertex_t, Edge_t, Graph_t>& graph,
 - **Automated CI:** GitHub Actions workflow builds and tests all binaries, fails on warnings, and checks exit codes.
 - **Cross-Platform Support:** Build system gracefully handles systems with and without OpenCL support.
 - **OpenCL Testing:** GPU-accelerated algorithms are tested when OpenCL is available.
+- **Load/Save Testing:** Comprehensive testing of graph I/O functionality across all combinations of graph types (directed/undirected), vertex types (weighted/unweighted), edge types (weighted/unweighted), and file formats (EL text format and ELAB binary format).
 
 ---
 
