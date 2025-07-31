@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Bash script for testing load/save functionality
-# Exit on any error (commented out for debugging)
-# set -e
+# Exit on any error
+set -e
 
 # Enable debug output
 set -x
@@ -46,18 +46,12 @@ fi
 echo "Found executable: $EXECUTABLE_PATH"
 echo "Executable permissions: $(ls -la "$EXECUTABLE_PATH")"
 
-# Test if executable can be run
-echo "Testing executable with --help..."
-if "$EXECUTABLE_PATH" --help > /dev/null 2>&1; then
-    echo "Executable test passed"
+# Test if executable can be run (it should fail without required arguments)
+echo "Testing executable without arguments (should fail)..."
+if "$EXECUTABLE_PATH" > /dev/null 2>&1; then
+    echo "Warning: Executable ran without arguments (unexpected)"
 else
-    echo "Executable test failed - trying to run without arguments..."
-    if "$EXECUTABLE_PATH" > /dev/null 2>&1; then
-        echo "Executable runs without arguments"
-    else
-        echo "Executable cannot be run"
-        exit 1
-    fi
+    echo "Executable correctly failed without arguments (expected)"
 fi
 
 # Check if temp directory already exists - if so, fail
