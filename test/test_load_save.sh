@@ -4,6 +4,9 @@
 # Exit on any error
 set -e
 
+# Enable debug output
+set -x
+
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
@@ -20,6 +23,9 @@ if [ ! -d "$BUILD_DIR" ]; then
     echo "Please build the project first"
     exit 1
 fi
+
+echo "Build directory contents:"
+ls -la "$BUILD_DIR"
 
 # Check if test_load_save executable exists
 EXECUTABLE_PATH="$BUILD_DIR/test_load_save"
