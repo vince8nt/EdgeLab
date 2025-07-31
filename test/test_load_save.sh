@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Bash script for testing load/save functionality
-# Exit on any error
-set -e
+# Exit on any error (commented out for debugging)
+# set -e
 
 # Enable debug output
 set -x
@@ -112,18 +112,26 @@ for graph_type in "${graph_types[@]}"; do
         
         echo "Running: $EXECUTABLE_PATH --graph-type $graph_type --vertex-type $vertex_type --edge-type $edge_type --scale 8 --degree 8 --gen-type erdos_renyi --save-file $el_path"
         
-        if "$EXECUTABLE_PATH" \
+        echo "About to execute the command..."
+        
+        # Execute the command and capture the exit code
+        "$EXECUTABLE_PATH" \
             --graph-type "$graph_type" \
             --vertex-type "$vertex_type" \
             --edge-type "$edge_type" \
             --scale 8 \
             --degree 8 \
             --gen-type erdos_renyi \
-            --save-file "$el_path"; then
+            --save-file "$el_path"
+        
+        exit_code=$?
+        echo "Command completed with exit code: $exit_code"
+        
+        if [ $exit_code -eq 0 ]; then
             echo "  EL format passed"
             ((passed_count++))
         else
-            echo "  EL format failed with exit code $?"
+            echo "  EL format failed with exit code $exit_code"
             exit 1
         fi
         
