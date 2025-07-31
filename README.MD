@@ -80,10 +80,10 @@ EdgeLab supports a comprehensive set of graph types through flexible templating.
 
 EdgeLab supports multiple file formats for loading and saving graphs.
 
-- To aid in explaining graph file formats, this graph "mini" is provided as an example
+- **Example Graph:** To aid in explaining file formats, the "mini" graph is provided as an example
     - Each example file encoding represents a variation of this graph
         - (potentially dropping vertex weights, edge weights, and/or directedness)
-- A complete list of "mini" encoding variations can be found in the graphs/ directory
+    - A complete list of "mini" encoding variations can be found in the graphs/ directory
 ```
 [ ID: 0 ]        wt: 1      [ ID: 1 ]
 [ wt: 1 ]  -------------->  [ wt: 6 ]
