@@ -334,7 +334,7 @@ The load/save tests verify that graphs can be saved and loaded correctly across 
 - Graph types: directed/undirected
 - Vertex types: weighted/unweighted
 - Edge types: weighted/unweighted  
-- File formats: EL (text) and ELAB (binary)
+- File formats: EL/WEL/VEL/VWEL (text) and ELAB (binary)
 
 ---
 
