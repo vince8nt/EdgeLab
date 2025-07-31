@@ -28,8 +28,13 @@ public:
             exit(1);
         }
 
-        // Open file for writing (must be binary for ELAB)
-        std::ofstream file(filepath, std::ios::binary);
+        // Open file for writing (binary mode for ELAB, text mode for others)
+        std::ofstream file;
+        if (file_type == FileType::ELAB) {
+            file.open(filepath, std::ios::binary);
+        } else {
+            file.open(filepath);
+        }
         if (!file.is_open()) {
             std::cerr << "Failed to open file for writing: " << filepath << std::endl;
             exit(1);
