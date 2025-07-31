@@ -48,40 +48,22 @@ EdgeLab supports a comprehensive set of graph types through flexible templating.
 ### Vertex Types
 
 - **VertexUW (Unweighted):** Basic vertex with no additional data
-    - Default weight: `1.0`
+    - Default weight: `1`
     - Memory efficient for simple graphs
 
 - **VertexW (Weighted):** Vertex with floating-point weight
     - Custom weight value
     - Useful for algorithms that consider vertex importance
 
-- **VertexUWD<Data_t> (Unweighted with Data):** Vertex with custom data but no weight
-    - Stores arbitrary data type `Data_t`
-    - Default weight: `1.0`
-    - Useful for storing metadata (e.g., labels, categories)
-
-- **VertexWD<Data_t> (Weighted with Data):** Vertex with both weight and custom data
-    - Combines weight and arbitrary data type `Data_t`
-    - Maximum flexibility for complex applications
-
 ### Edge Types
 
 - **EdgeUW (Unweighted):** Basic edge with destination vertex only
-    - Default weight: `1.0`
+    - Default weight: `1`
     - Memory efficient for simple graphs
 
 - **EdgeW (Weighted):** Edge with floating-point weight
     - Custom weight value
     - Essential for weighted graph algorithms
-
-- **EdgeUWD<Data_t> (Unweighted with Data):** Edge with custom data but no weight
-    - Stores arbitrary data type `Data_t`
-    - Default weight: `1.0`
-    - Useful for storing edge metadata (e.g., timestamps, types)
-
-- **EdgeWD<Data_t> (Weighted with Data):** Edge with both weight and custom data
-    - Combines weight and arbitrary data type `Data_t`
-    - Maximum flexibility for complex edge properties
 
 ### Graph Direction Types
 
@@ -96,7 +78,36 @@ EdgeLab supports a comprehensive set of graph types through flexible templating.
 
 ### Graph File Formats
 
-EdgeLab supports multiple file formats for loading and saving graphs:
+EdgeLab supports multiple file formats for loading and saving graphs.
+```markdown
+# To aid in explaining graph file formats, this graph "mini" is provided as an example
+## Each example file encoding represents a variation of this graph
+### (potentially dropping vertex weights, edge weights, and/or directedness)
+# A complete list of "mini" encoding variations can be found in the graphs/ directory
+[ ID: 0 ]        wt: 1      [ ID: 1 ]
+[ wt: 1 ]  -------------->  [ wt: 6 ]
+                          
+   ^      \               /    |
+   |       \wt: 2   wt: 3/     |
+   |        \           /      |
+   |         \         /       |
+   |          \       /        |
+   |           \     /         |
+   |            \   /          |
+   |             \ /           |
+   |wt: 3         X            |wt: 5
+   |             / \           |
+   |            /   \          |
+   |           /     \         |
+   |          /       \        |
+   |         /         \       |
+   |        /           \      |
+   |       /             \     |
+   |      V               V    V
+                          
+[ ID: 3 ]        wt: 2      [ ID: 2 ]
+[ wt: 4 ]  <--------------  [ wt: 3 ]
+```
 
 - **EL (Edge List):** Plain text edge list format
     - Unweighted edges and vertices
@@ -112,7 +123,7 @@ EdgeLab supports multiple file formats for loading and saving graphs:
 1 2
 1 3
 2 3
-3 1
+3 0
 ```
 
 - **WEL (Weighted Edge List):** Plain text weighted edge list format
@@ -126,7 +137,7 @@ EdgeLab supports multiple file formats for loading and saving graphs:
 1 2 5
 1 3 1
 2 3 2
-3 1 3
+3 0 3
 ```
 
 - **VEL (Edge List with Vertex Weights):** Plain text format with vertex weights
@@ -143,7 +154,7 @@ v 1 6
 1 2
 1 3
 2 3
-3 1
+3 0
 v 2 3
 
 ```
@@ -161,7 +172,7 @@ v 3 1
 1 2 5
 1 3 1
 2 3 2
-3 1 3
+3 0 3
 ```
 
 - **GRAPH (METIS Graph):** METIS graph format
@@ -177,7 +188,7 @@ v 3 1
     - For weighted vertices, the first number of each line is the vertex weight
     - Otherwise, lines are a list of outgoing edges (sorted by strictly increasing vertex ID).
     - For weighted edges, each edge is of the form `<weight> <destination>`
-```markdown
+```c
 // A METIS graph equavilant to the VWEL example (vertex IDs shifted up by 1)
 4 6 11     // header line for: 4 vertices, 6 edges, weighted vertices and edges
 1 1 2 2 3
@@ -191,18 +202,35 @@ v 3 1
     - Fast loading and saving with small file sizes
     - optimized to use 50% less space for undirected graphs vs symmetrized directed graphs
     - Platform-independent binary format
-    - 15 byte Header formatted as: `<flags>(3 bytes) <num vertices>(4 bytes) <num_edges>(8 bytes)`
-        - Flag bytes specify the booleans: `<directed> <v_weights> <e_weights>`
-    - Vertex info (repeated `<num vertices> + 1` times):
-        - Format: `<weight>(4 bytes)? <edges_offset>(8 bytes)`
-        - The `<num vertices> + 1`(last) entry should have `<edges_offset> = num_edges`
-            - It's weight is unused data
+    - all numerical values are unsigned integer types (for well defined bit placement)
+    - 15 byte Header formatted as: `<flags>(3 bytes) <num vertices>(4 bytes) <num edges>(8 bytes)`
+        - Flag bytes specify the booleans: `<directed> <v weighted> <e weighted>`
+    - Vertex info (repeated `<num vertices>` times):
+        - Format: `<weight>(4 bytes)? <degree (num outgoing edges)>(4 bytes)`
     - Edges info (repeated `<num edges>` times):
         - Format: `<weight>(4 bytes)? <destination>(4 bytes)`
-        - Vertex `v` is the source to edges: `edges_offsets[v] to edges_offsets[v+1]` 
+        - Edges are sorted in order of source ID (implied via vertex info) 
         - For each vertex, edges are sorted by strictly increasing destination ID
-        - For directed graphs, only edges where `src < dest` are allowed
+        - For undirected graphs, only edges where `src < dest` are stored in ELAB files
+            - These edges will be symmetrized in place during graph construction
+            - ELAB `<num edges>` and `<degree>` values represent directed edge counts **after symmetrization**
             - Self loops are not possible for directed graphs
+```c
+// ELAB header data
+0x00 0x01 0x01        // 3 x 8-bit flags for undirected graph with vertex and edge weights
+0x00000004            // 32-bit vertex count for 4 vertices
+0x0000000000000006    // 64-bit edge count for 6 edges
+// ELAB vertex data
+0x00000001 0x00000003 // Vertex ID=0, weight=1, degree=3
+0x00000006 0x00000003
+0x00000003 0x00000003
+0x00000004 0x00000003
+// ELAB edge data
+0x00000001 0x00000001   0x00000002 0x00000002   0x00000003 0x00000003
+0x00000005 0x00000002   0x00000003 0x00000003
+0x00000002 0x00000003
+// Total ELAB file size is 95 bytes
+```
 
 ### Example Graph Type Combinations
 
