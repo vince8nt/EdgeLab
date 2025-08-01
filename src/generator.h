@@ -30,6 +30,7 @@ public:
                 vg = GenerateWattsStrogatz();
                 break;
             case GenType::BARABASI_ALBERT:
+                vg = GenerateBarabasiAlbert();
                 break;
             default:
                 std::cout << "Defaulting to Erdos-Renyi" << std::endl;
@@ -198,7 +199,98 @@ private:
         return vg;
     }
 
-    // Graph GenerateBarabasiAlbert();
+    VectorGraph<Vertex_t, Edge_t> GenerateBarabasiAlbert() {
+        std::mt19937 gen;
+        gen.seed(seed_);
+        std::uniform_int_distribution<weight_t> weight_dist(1, 256);
+        
+        VectorGraph<Vertex_t, Edge_t> vg(num_vertices_);
+        auto &matrix = vg.matrix;
+        
+        // Barabási-Albert parameters
+        const vertex_ID_t m0 = std::min(static_cast<vertex_ID_t>(degree_), num_vertices_); // Initial clique size
+        const int m = std::max(1, degree_ / 2); // Number of edges to add per new vertex
+        
+        // Step 1: Start with a complete graph of m0 vertices
+        for (vertex_ID_t v = 0; v < m0; v++) {
+            for (vertex_ID_t u = v + 1; u < m0; u++) {
+                if constexpr (WeightedEdgeType<Edge_t>) {
+                    weight_t weight = weight_dist(gen);
+                    matrix[v].push_back({u, weight});
+                } else {
+                    matrix[v].push_back({u});
+                }
+            }
+        }
+        
+        // Step 2: Add remaining vertices one by one with preferential attachment
+        for (vertex_ID_t new_vertex = m0; new_vertex < num_vertices_; new_vertex++) {
+            // Calculate degree distribution for preferential attachment
+            std::vector<vertex_ID_t> degree_sequence;
+            for (vertex_ID_t v = 0; v < new_vertex; v++) {
+                int degree = static_cast<int>(matrix[v].size());
+                // Add vertex v to the sequence 'degree' times (proportional to its degree)
+                for (int i = 0; i < degree; i++) {
+                    degree_sequence.push_back(v);
+                }
+            }
+            
+            // Add m edges from new_vertex to existing vertices
+            std::vector<vertex_ID_t> connected_vertices;
+            for (int edge_count = 0; edge_count < m && !degree_sequence.empty(); edge_count++) {
+                // Select a vertex with probability proportional to its degree
+                std::uniform_int_distribution<size_t> seq_dist(0, degree_sequence.size() - 1);
+                size_t selected_index = seq_dist(gen);
+                vertex_ID_t selected_vertex = degree_sequence[selected_index];
+                
+                // Check if we already connected to this vertex
+                bool already_connected = false;
+                for (vertex_ID_t connected : connected_vertices) {
+                    if (connected == selected_vertex) {
+                        already_connected = true;
+                        break;
+                    }
+                }
+                
+                if (!already_connected) {
+                    connected_vertices.push_back(selected_vertex);
+                    
+                    if constexpr (Graph_t == GraphType::UNDIRECTED) {
+                        // For undirected graphs, only add edges where new_vertex < selected_vertex
+                        // or add to both vertices to maintain symmetry
+                        if constexpr (WeightedEdgeType<Edge_t>) {
+                            weight_t weight = weight_dist(gen);
+                            matrix[new_vertex].push_back({selected_vertex, weight});
+                        } else {
+                            matrix[new_vertex].push_back({selected_vertex});
+                        }
+                    } else {
+                        // For directed graphs, add edge from new_vertex to selected_vertex
+                        if constexpr (WeightedEdgeType<Edge_t>) {
+                            weight_t weight = weight_dist(gen);
+                            matrix[new_vertex].push_back({selected_vertex, weight});
+                        } else {
+                            matrix[new_vertex].push_back({selected_vertex});
+                        }
+                    }
+                    
+                    // Remove the selected vertex from degree_sequence to avoid duplicates
+                    degree_sequence.erase(degree_sequence.begin() + selected_index);
+                }
+            }
+        }
+        
+        // Generate random (weighted) vertices
+        if constexpr (WeightedVertexType<Vertex_t>) {
+            auto &vertices = vg.vertices;
+            vertices.reserve(num_vertices_);
+            for (vertex_ID_t v = 0; v < num_vertices_; v++) {
+                vertices.push_back(weight_dist(gen));
+            }
+        }
+        
+        return vg;
+    }
 
     const uint32_t seed_ = 111119;
     const GenType gen_type_;
