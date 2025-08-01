@@ -16,6 +16,10 @@ public:
             num_edges_(static_cast<edge_ID_t>(num_vertices_) * degree) {
     }
 
+    // Generate a VectorGraph with the given parameters
+    // For undirected graphs, only edges where dest > src are generated
+    // For both directed and bidirected graphs, any edge (including self-loops) can be generated
+    // Directed and bidirected graphs are treated exactly the same for generation purposes
     VectorGraph<Vertex_t, Edge_t> Generate() {
         std::cout << "Generating " << Graph_t << " " << gen_type_ << " graph: "
             << scale_ << " degree: " << degree_ << std::endl;
@@ -43,6 +47,17 @@ public:
     }
 
 private:
+    // generate random (weighted) vertices
+    void GenerateVertexWeights(VectorGraph<Vertex_t, Edge_t> &vg,
+            std::mt19937 &gen, std::uniform_int_distribution<weight_t> &weight_dist) {
+        if constexpr (WeightedVertexType<Vertex_t>) {
+            vg.vertices.reserve(num_vertices_);
+            for (vertex_ID_t v = 0; v < num_vertices_; v++) {
+                vg.vertices.push_back(weight_dist(gen));
+            }
+        }
+    }
+
     VectorGraph<Vertex_t, Edge_t> GenerateErdosRenyi() {
         std::mt19937 gen;
         gen.seed(seed_);
@@ -81,15 +96,7 @@ private:
             }
         }
 
-        // generate random (weighted) vertices
-        if constexpr (WeightedVertexType<Vertex_t>) {
-            auto &vertices = vg.vertices;
-            vertices.reserve(num_vertices_);
-            for (vertex_ID_t v = 0; v < num_vertices_; v++) {
-                vertices.push_back(weight_dist(gen));
-            }
-        }
-
+        GenerateVertexWeights(vg, gen, weight_dist);
         return vg;
     }
 
@@ -201,15 +208,7 @@ private:
             }
         }
         
-        // Generate random (weighted) vertices
-        if constexpr (WeightedVertexType<Vertex_t>) {
-            auto &vertices = vg.vertices;
-            vertices.reserve(num_vertices_);
-            for (vertex_ID_t v = 0; v < num_vertices_; v++) {
-                vertices.push_back(weight_dist(gen));
-            }
-        }
-        
+        GenerateVertexWeights(vg, gen, weight_dist);
         return vg;
     }
 
@@ -304,15 +303,7 @@ private:
             }
         }
         
-        // Generate random (weighted) vertices
-        if constexpr (WeightedVertexType<Vertex_t>) {
-            auto &vertices = vg.vertices;
-            vertices.reserve(num_vertices_);
-            for (vertex_ID_t v = 0; v < num_vertices_; v++) {
-                vertices.push_back(weight_dist(gen));
-            }
-        }
-        
+        GenerateVertexWeights(vg, gen, weight_dist);
         return vg;
     }
 

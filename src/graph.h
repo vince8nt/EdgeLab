@@ -3,34 +3,44 @@
 
 #include "util.h"
 #include "graph_comp.h"
+#include <span>
 
+// Forward declaration for Vertex specialization
+template<typename Vertex_t, typename Edge_t, GraphType Graph_t>
+struct CSR_Vertex;
 
+// Vertex specialization for DIRECTED and UNDIRECTED graphs
+template<typename Vertex_t, typename Edge_t>
+struct CSR_Vertex<Vertex_t, Edge_t, GraphType::DIRECTED> : public Vertex_t {
+    CSR_Vertex(Edge_t* edges_begin) requires EmptyVertexType<Vertex_t> : edges_begin_(edges_begin) {}
+    CSR_Vertex(const Vertex_t& vertex, Edge_t* edges_begin) requires NonEmptyVertexType<Vertex_t> :
+            Vertex_t(vertex), edges_begin_(edges_begin) {}
+    Edge_t* edges_begin_;
+};
+
+template<typename Vertex_t, typename Edge_t>
+struct CSR_Vertex<Vertex_t, Edge_t, GraphType::UNDIRECTED> : public Vertex_t {
+    CSR_Vertex(Edge_t* edges_begin) requires EmptyVertexType<Vertex_t> : edges_begin_(edges_begin) {}
+    CSR_Vertex(const Vertex_t& vertex, Edge_t* edges_begin) requires NonEmptyVertexType<Vertex_t> :
+            Vertex_t(vertex), edges_begin_(edges_begin) {}
+    Edge_t* edges_begin_;
+};
+
+// Vertex specialization for BIDIRECTED graphs
+template<typename Vertex_t, typename Edge_t>
+struct CSR_Vertex<Vertex_t, Edge_t, GraphType::BIDIRECTED> : public Vertex_t {
+    CSR_Vertex(Edge_t* edges_begin, Edge_t* edges_in_begin) requires EmptyVertexType<Vertex_t> : 
+            edges_begin_(edges_begin), edges_in_begin_(edges_in_begin) {}
+    CSR_Vertex(const Vertex_t& vertex, Edge_t* edges_begin, Edge_t* edges_in_begin) requires NonEmptyVertexType<Vertex_t> :
+            Vertex_t(vertex), edges_begin_(edges_begin), edges_in_begin_(edges_in_begin) {}
+    Edge_t* edges_begin_;
+    Edge_t* edges_in_begin_;
+};
 
 template<typename Vertex_t, typename Edge_t, GraphType Graph_t>
 class Graph {
-
 public:
-
-    // Vertex used in flattened CSR Graph
-    // Todo (maybe move this to generator class)
-    #pragma pack (push, 4)
-    struct Vertex : public Vertex_t {
-        // For empty vertex - relies on Empty Base Class Optimization (EBCO)
-        Vertex(Edge_t* edges_begin) requires EmptyVertexType<Vertex_t> :
-                edges_begin_(edges_begin) {}
-
-        // For non empty vertex
-        Vertex(const Vertex_t& vertex, Edge_t* edges_begin)
-                requires NonEmptyVertexType<Vertex_t> :
-                Vertex_t(vertex), edges_begin_(edges_begin) {}
-
-        // starting location of our outgoing edges in graph's edges_ array
-        Edge_t* edges_begin_; // requires EmptyVertexType<Vertex_t>;
-        // alignas(vertex_ID_t) const Edge_t* edges_begin_ requires NonEmptyVertexType<Vertex_t>;
-        // TODO(vince): ensure dense packing of Vertex attributes
-    };
-    #pragma pack (pop)
-
+    using Vertex = CSR_Vertex<Vertex_t, Edge_t, Graph_t>;
 
     // Vertex wrapper exposed to user (A single Vertex Pointer)
     struct VertexRef {
@@ -81,6 +91,43 @@ public:
             return end();
         }
 
+        // Incoming Edge iteration support (only for BIDIRECTED and UNDIRECTED graphs)
+        std::span<Edge_t> in() const requires (Graph_t == GraphType::BIDIRECTED) {
+            return {csr_loc_->edges_in_begin_, (csr_loc_ + 1)->edges_in_begin_};
+        }
+        std::span<Edge_t> in() const requires (Graph_t == GraphType::UNDIRECTED) {
+            return {csr_loc_->edges_begin_, (csr_loc_ + 1)->edges_begin_};
+        }
+
+        // Incoming Edge indexing support (only for BIDIRECTED and UNDIRECTED graphs)
+        vertex_ID_t in_degree() const
+                requires (Graph_t == GraphType::BIDIRECTED or Graph_t == GraphType::UNDIRECTED) {
+            return in().size();
+        }
+        Edge_t in_edge(vertex_ID_t i) const
+                requires (Graph_t == GraphType::BIDIRECTED or Graph_t == GraphType::UNDIRECTED) {
+            return in()[i];
+        }
+
+        // Incoming Edge lookup support (only for BIDIRECTED and UNDIRECTED graphs)
+        bool has_edge_from(vertex_ID_t source_id) const
+                requires (Graph_t == GraphType::BIDIRECTED or Graph_t == GraphType::UNDIRECTED) {
+            return std::binary_search(in().begin(), in().end(), source_id,
+            [](const Edge_t& edge, vertex_ID_t source) {
+                return edge.dest() < source;
+            });
+        }
+        Edge_t* get_edge_from(vertex_ID_t source_id) const
+                requires (Graph_t == GraphType::BIDIRECTED or Graph_t == GraphType::UNDIRECTED) {
+            auto it = std::lower_bound(in().begin(), in().end(), source_id,
+                [](const Edge_t& edge, vertex_ID_t source) {
+                    return edge.dest() < source;
+                });
+            if (it != in().end() and it->dest() == source_id)
+                return it;
+            return in().end();
+        }
+
         // Vertex functionality support
         weight_t weight() const { return csr_loc_->weight(); }
         Vertex::data_type data() const requires DataVertexType<Vertex>
@@ -89,20 +136,29 @@ public:
 
 
     // constructors / destructor
-    Graph(vertex_ID_t num_vertices, Vertex* vertices, edge_ID_t num_edges, Edge_t* edges) :
+    Graph(vertex_ID_t num_vertices, Vertex* vertices, edge_ID_t num_edges, Edge_t* edges)
+            requires (Graph_t != GraphType::BIDIRECTED) :
             num_vertices_(num_vertices), vertices_(vertices),
-            num_edges_(num_edges), edges_(edges) {
+            num_edges_(num_edges), edges_(edges), edges_in_(nullptr) {
+    }
+    Graph(vertex_ID_t num_vertices, Vertex* vertices, edge_ID_t num_edges, Edge_t* edges, Edge_t* edges_in)
+            requires (Graph_t == GraphType::BIDIRECTED) :
+            num_vertices_(num_vertices), vertices_(vertices),
+            num_edges_(num_edges), edges_(edges), edges_in_(edges_in) {
     }
     Graph(const Graph&) = delete;
-    Graph(Graph&& other) noexcept : // only enable move constructor.
+    Graph(Graph&& other) noexcept :
         num_vertices_(other.num_vertices_),
         vertices_(other.vertices_),
         num_edges_(other.num_edges_),
-        edges_(other.edges_) {
+        edges_(other.edges_),
+        edges_in_(other.edges_in_) {
     }
     Graph& operator=(const Graph&) = delete;
     Graph& operator=(Graph&&) noexcept = delete;
     ~Graph() {
+        if constexpr (Graph_t == GraphType::BIDIRECTED)
+            free(const_cast<Edge_t*>(edges_in_));
         free(const_cast<Edge_t*>(edges_));
         free(const_cast<Vertex*>(vertices_));
     }
@@ -110,10 +166,13 @@ public:
 
     // getters
     edge_ID_t num_edges() const {
-        if constexpr (Graph_t == GraphType::UNDIRECTED)
-            return num_edges_ / 2;
-        else
-            return num_edges_;
+        // Always return the total number of directed edges in the CSR
+        return num_edges_;
+    }
+
+    // Get the number of unique undirected edges (only available for undirected graphs)
+    edge_ID_t num_undirected_edges() const requires (Graph_t == GraphType::UNDIRECTED) {
+        return num_edges_ / 2;
     }
 
     // indexing suport for vertices
@@ -150,8 +209,7 @@ private:
     const Vertex* vertices_;
     const edge_ID_t num_edges_;
     const Edge_t* const edges_;
+    const Edge_t* const edges_in_;
 };
-
-
 
 #endif // GRAPH_H_

@@ -219,7 +219,7 @@ private:
         bool weighted_edges = WeightedEdgeType<Edge_t>;
         bool unused = false;
         vertex_ID_t num_vertices = graph.num_vertices();
-        edge_ID_t num_edges = directed ? graph.num_edges() : graph.num_edges() * 2;
+        edge_ID_t num_edges = graph.num_edges();
         file.write(reinterpret_cast<const char*>(&directed), sizeof(bool));
         file.write(reinterpret_cast<const char*>(&weighted_vertices), sizeof(bool));
         file.write(reinterpret_cast<const char*>(&weighted_edges), sizeof(bool));

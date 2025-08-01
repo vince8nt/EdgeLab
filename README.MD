@@ -25,7 +25,8 @@ A high-performance C++20 graph library for efficient graph loading, generation, 
 
 - **Graph:** Efficient CSR format graph.
     - **num_vertices():** Returns the number of vertices (densely packed) in the graph.
-    - **num_edges():** Returns the number of edges in the graph (accounts for directed/undirected).
+    - **num_edges():** Returns the total number of directed edges in the CSR representation.
+    - **num_undirected_edges():** Returns the number of unique undirected edges (only for undirected graphs).
     - **Iteration/Indexing:** Exposes a `VertexRef` type for access via iteration and/or indexing.
     - **Printing:** The graph can be printed to a stream for debugging using the `<<` operator.
 - **VertexRef:** An 8-byte struct for efficient passing by value.
@@ -87,14 +88,40 @@ EdgeLab supports a comprehensive set of graph types through flexible templating.
 
 ### Graph Direction Types
 
-- **GraphType::DIRECTED:** Directed graph where edges have direction
-    - Edge (u,v) exists independently of edge (v,u)
-    - Useful for modeling asymmetric relationships
+EdgeLab supports three graph direction types with automatic promotion logic:
 
-- **GraphType::UNDIRECTED:** Undirected graph where edges are bidirectional
-    - Edge (u,v) implies edge (v,u) exists
+- **GraphType::UNDIRECTED:** Undirected graph where edges do not have a direction
+    - Edge (u,v) implies edge (v,u) exists (and has the same weight/data)
     - Automatically symmetrized during graph construction
+    - **num_edges() returns the total number of directed edges** (2 × unique undirected edges)
+    - **num_undirected_edges() returns the number of unique undirected edges**
     - Useful for modeling symmetric relationships
+
+- **GraphType::DIRECTED:** Directed graph with outgoing edges
+    - Asymmetric relationships: Edge (u,v) exists independently of edge (v,u)
+    - Only stores outgoing edges for space efficiency
+    - **num_edges() returns the number of directed edges**
+    - Useful for algorithms that only need to traverse forwards
+
+- **GraphType::BIDIRECTED:** Directed graph with both incoming and outgoing edges
+    - Asymmetric relationships: Edge (u,v) exists independently of edge (v,u)
+    - Stores both outgoing and incoming edges for algorithm efficiency
+    - **num_edges() returns the number of directed edges** (excluding incoming edges)
+    - Useful for algorithms that need to traverse both directions
+
+#### Graph Type Promotion Logic
+
+The graph type system supports automatic promotion based on algorithm requirements:
+
+- **Generator/File Specification**: Can only specify `UNDIRECTED` or `DIRECTED` graphs
+- **Algorithm Requirements**: Can request `UNDIRECTED`, `DIRECTED`, or `BIDIRECTED`
+- **Runtime Promotion From Specification to Actual Loaded Type**: 
+  - `UNDIRECTED` → `UNDIRECTED` (no matter the requirement)
+  - `DIRECTED` → `DIRECTED` (when algorithm requires directed)
+  - `DIRECTED` → `BIDIRECTED` (when algorithm requires bidirected)
+  - `DIRECTED` → `UNDIRECTED` (when algorithm requires undirected)
+
+This design allows algorithms to specify their computational needs while the runtime handles the necessary graph transformations automatically. If an algorithm recieves an `UNDIRECTED` graph when that wasn't it's specification, the algorithm should still work as intended. This is because `UNDIRECTED` can be thought of as a sub type to both `DIRECTED` and `BIDIRECTED` (since it is composed of directed edges, and its symmetry guarentee makes vertices aware of their incoming edges). Infact, `UNDIRECTED` graph maintain the full incoming edge interface present in `BIDIRECTED` graph, allowing `BIDIRECTED` algorithms to work with a "polymorphic" graph type.
 
 ### Graph File Formats
 

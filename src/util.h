@@ -18,7 +18,7 @@
 class Loader;
 
 // Graph capacity specifications
-// use unsigned integer types so that bit layout is well defined (for saving/loading files)
+// use unsigned integer types so that bit layout is well defined (for saving/loading binary files)
 using vertex_ID_t = uint32_t;
 using edge_ID_t = uint64_t;
 using weight_t = uint32_t;
@@ -47,7 +47,8 @@ inline double timer_stop(const auto &start) {
 // specification of graph types
 enum class GraphType {
     UNDIRECTED,
-    DIRECTED
+    DIRECTED,
+    BIDIRECTED
 };
 
 inline std::ostream& operator<<(std::ostream& os, GraphType Graph_t) {
@@ -57,6 +58,9 @@ inline std::ostream& operator<<(std::ostream& os, GraphType Graph_t) {
             break;
         case GraphType::DIRECTED:
             os << "Directed";
+            break;
+        case GraphType::BIDIRECTED:
+            os << "Bidirected";
             break;
         default:
             os << "Unknown Graph Type";
