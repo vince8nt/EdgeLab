@@ -28,9 +28,9 @@ public:
             exit(1);
         }
 
-        // Open file for writing (binary mode for ELAB, text mode for others)
+        // Open file for writing (binary mode for CG, text mode for others)
         std::ofstream file;
-        if (file_type == FileType::ELAB) {
+        if (file_type == FileType::CG) {
             file.open(filepath, std::ios::binary);
         } else {
             file.open(filepath);
@@ -57,8 +57,8 @@ public:
             case FileType::GRAPH:
                 std::cerr << "GRAPH format saving not implemented yet" << std::endl;
                 exit(1);
-            case FileType::ELAB:
-                save_ELAB(graph, file);
+            case FileType::CG:
+                save_CG(graph, file);
                 break;
             default:
                 std::cerr << "Unsupported file type: " << file_type << std::endl;
@@ -92,8 +92,8 @@ private:
                 // GRAPH: both weighted/unweighted, directed only
                 return Graph_t == GraphType::DIRECTED;
             
-            case FileType::ELAB:
-                // ELAB: supports all types
+            case FileType::CG:
+                // CG: supports all types
                 return true;
             
             default:
@@ -211,9 +211,9 @@ private:
         }
     }
 
-    // Save ELAB format
+    // Save CG format
     // most space and time efficient way to store and load graphs
-    void save_ELAB(const Graph<Vertex_t, Edge_t, Graph_t>& graph, std::ofstream& file) {
+    void save_CG(const Graph<Vertex_t, Edge_t, Graph_t>& graph, std::ofstream& file) {
         bool directed = Graph_t == GraphType::DIRECTED;
         bool weighted_vertices = WeightedVertexType<Vertex_t>;
         bool weighted_edges = WeightedEdgeType<Edge_t>;
@@ -267,7 +267,7 @@ private:
         }
         else {
             if constexpr (DataEdgeType<Edge_t>)
-                std::cerr << "Data Edge writing currently unsupported by ELAB" << std::endl;
+                std::cerr << "Data Edge writing currently unsupported by CG" << std::endl;
             else
                 std::cerr << "Uncompacted Edge Struct Error" << std::endl;
             exit(1);

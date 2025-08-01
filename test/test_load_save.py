@@ -6,7 +6,7 @@ This script tests graph save/load functionality for all combinations of:
 - Graph types: directed/undirected
 - Vertex types: weighted/unweighted  
 - Edge types: weighted/unweighted
-- File formats: EL (text) and ELAB (binary)
+- File formats: EL (text) and CG (binary)
 
 Replaces both test_load_save.ps1 and test_load_save.sh
 """
@@ -63,9 +63,9 @@ def main():
     vertex_types = ["unweighted", "weighted", "unweighted", "weighted"]
     edge_types = ["unweighted", "unweighted", "weighted", "weighted"]
     el_files = ["temp.el", "temp.vel", "temp.wel", "temp.vwel"]
-    elab_file = "temp.elab"
+    cg_file = "temp.cg"
     
-    # Counter for tests (each configuration runs 2 tests: EL and ELAB)
+    # Counter for tests (each configuration runs 2 tests: EL and CG)
     test_count = 0
     passed_count = 0
     
@@ -107,10 +107,10 @@ def main():
                         print(f"  stderr: {result.stderr}")
                     sys.exit(1)
                 
-                # Test with ELAB format
+                # Test with CG format
                 test_count += 1
-                print("  Testing ELAB format...")
-                elab_path = temp_dir / elab_file
+                print("  Testing CG format...")
+                cg_path = temp_dir / cg_file
                 
                 cmd = [
                     str(executable_path),
@@ -120,17 +120,17 @@ def main():
                     "--scale", "8",
                     "--degree", "8",
                     "--gen-type", "erdos_renyi",
-                    "--save-file", str(elab_path)
+                    "--save-file", str(cg_path)
                 ]
                 
                 print(f"  Running: {' '.join(cmd)}")
                 
                 result = subprocess.run(cmd, capture_output=True, text=True)
                 if result.returncode == 0:
-                    print("  ELAB format passed")
+                    print("  CG format passed")
                     passed_count += 1
                 else:
-                    print(f"  ELAB format failed with exit code {result.returncode}")
+                    print(f"  CG format failed with exit code {result.returncode}")
                     if result.stdout:
                         print(f"  stdout: {result.stdout}")
                     if result.stderr:

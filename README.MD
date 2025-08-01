@@ -214,11 +214,24 @@ v 3 1
 4 3 1
 ```
 
-- **ELAB (EdgeLab Binary):** Custom binary format
-    - Supports all graph types (directed/undirected, weighted/unweighted)
-    - Fast loading and saving with small file sizes (especially for large sparse graphs)
-    - optimized to use 50% less space for undirected graphs vs symmetrized directed graphs
-    - Platform-independent binary format
+- **CG (Compacted Graph):** Platform-independent binary format
+    - Supports all graph types (directed/undirected, weighted/unweighted vertices and edges)
+    - Compacted for small file sizes
+        - Uses 32-bit vertex degrees instead of a CSR's 64-bit edge offsets
+        - Undirected graphs only store edges in one direction
+            - Up to 50% smaller file sizes than equivalent symmetrized directed graphs
+    - Super fast loading and saving
+        - Always linear time complexity
+        - Directed graph specs:
+            - O(1) additional space 
+            - O(1) read syscalls
+            - No random memory accessing
+            - Directly writes edges from memory into CSR (when loading without edge data)
+        - Undirected graph specs:
+            - O(num vertices) additional space (4 bytes per vertex)
+            - O(num vertices) read syscalls (1 read per vertex)
+            - Includes random memory accessing (not ideal for cache performance)
+            - While worse than directed graph specs, smaller file size makes up for it
     - all numerical values are unsigned integer types (for well defined bit placement)
     - 16 byte Header formatted as: `<flags>(4 bytes) <num vertices>(4 bytes) <num edges>(8 bytes)`
         - Flag bytes specify the booleans: `<directed> <v weighted> <e weighted> <unused>`
@@ -229,21 +242,21 @@ v 3 1
         - Format: `<weight>(4 bytes)? <destination>(4 bytes)`
         - Edges are sorted in order of source ID (implied via vertex info) 
         - For each vertex, edges are sorted by strictly increasing destination ID
-        - For undirected graphs, only edges where `src < dest` are stored in ELAB files
+        - For undirected graphs, only edges where `src < dest` are stored in CG files
             - These edges will be symmetrized in place during graph construction
-            - ELAB `<num edges>` and `<degree>` values represent directed edge counts **after symmetrization**
-            - Self loops are not possible for directed graphs
+            - CG `<num edges>` and `<degree>` values represent directed edge counts **after symmetrization**
+            - Self loops are not possible for undirected graphs
 ```c
-// ELAB header data (16 bytes)
+// CG header data (16 bytes)
 0x00 0x01 0x01 0x00   // 4 x 8-bit flags for undirected graph with vertex and edge weights
 0x00000004            // 32-bit vertex count for 4 vertices
 0x0000000000000006    // 64-bit edge count for 6 edges
-// ELAB vertex data
+// CG vertex data
 0x00000001 0x00000003 // Vertex ID=0, weight=1, degree=3
 0x00000006 0x00000003
 0x00000003 0x00000003
 0x00000004 0x00000003
-// ELAB edge data
+// CG edge data
 0x00000001 0x00000001   0x00000002 0x00000002   0x00000003 0x00000003
 0x00000005 0x00000002   0x00000001 0x00000003
 0x00000002 0x00000003 // Vertex 2 has 1 undirected edge (weight=2) to vertex 3
@@ -331,7 +344,7 @@ The load/save tests verify that graphs can be saved and loaded correctly across 
 - Graph types: directed/undirected
 - Vertex types: weighted/unweighted
 - Edge types: weighted/unweighted  
-- File formats: EL/WEL/VEL/VWEL (text) and ELAB (binary)
+- File formats: EL/WEL/VEL/VWEL (text) and CG (binary)
 
 ---
 
@@ -393,7 +406,7 @@ long long breadth_first_search_opencl(Graph<Vertex_t, Edge_t, Graph_t>& graph,
 - **Automated CI:** GitHub Actions workflow builds and tests all binaries, fails on warnings, and checks exit codes.
 - **Cross-Platform Support:** Build system gracefully handles systems with and without OpenCL support.
 - **OpenCL Testing:** GPU-accelerated algorithms are tested when OpenCL is available.
-- **Load/Save Testing:** Comprehensive testing of graph I/O functionality across all combinations of graph types (directed/undirected), vertex types (weighted/unweighted), edge types (weighted/unweighted), and file formats (EL text format and ELAB binary format).
+- **Load/Save Testing:** Comprehensive testing of graph I/O functionality across all combinations of graph types (directed/undirected), vertex types (weighted/unweighted), edge types (weighted/unweighted), and file formats (EL text format and CG binary format).
 
 ---
 

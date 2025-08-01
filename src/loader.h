@@ -21,7 +21,7 @@ enum class FileType {
     VEL,   // plain text | edge list            | both        | unweighted | weighted       
     VWEL,  // plain text | edge list            | both        | weighted   | weighted       
     GRAPH, // plain text | prebuilt             | directed    | both       | both           
-    ELAB   // binary     | prebuilt/ half built | both        | both       | both         
+    CG     // binary     | prebuilt/ half built | both        | both       | both         
 };
 std::ostream& operator<<(std::ostream& os, FileType file_type) {
     switch (file_type) {
@@ -30,7 +30,7 @@ std::ostream& operator<<(std::ostream& os, FileType file_type) {
         case FileType::VEL: os << "VEL(Edge List with Vertex Weights)"; break;
         case FileType::VWEL: os << "VWEL(Weighted Edge List with Vertex Weights)"; break;
         case FileType::GRAPH: os << "GRAPH(METIS Graph)"; break;
-        case FileType::ELAB: os << "ELAB(EdgeLab Graph)"; break;
+        case FileType::CG: os << "CG(Compacted Graph)"; break;
         default: os << "Unknown File Type"; break;
     }
     return os;
@@ -47,7 +47,7 @@ std::ostream& operator<<(std::ostream& os, FileType file_type) {
     if (ext == "vel") return FileType::VEL;
     if (ext == "vwel") return FileType::VWEL;
     if (ext == "graph") return FileType::GRAPH;
-    if (ext == "elab") return FileType::ELAB;
+            if (ext == "cg") return FileType::CG;
     std::cerr << "Unsupported file extension: " << ext << std::endl;
     exit(1);
 }
@@ -59,8 +59,8 @@ public:
     // Main entry: takes a file path, checks existence, determines extension, and sets opts accordingly
     void load_graph_header(CLIOptions& opts) {
         file_type_ = GetFileExtension(opts.load_file_path);
-        // open file in binary mode for ELAB format
-        if (file_type_ == FileType::ELAB) {
+            // open file in binary mode for CG format
+    if (file_type_ == FileType::CG) {
             file_ = std::ifstream(opts.load_file_path, std::ios::binary);
         } else {
             file_ = std::ifstream(opts.load_file_path);
@@ -91,8 +91,8 @@ public:
             case FileType::GRAPH:
                 load_head_GRAPH(opts);
                 break;
-            case FileType::ELAB:
-                load_head_ELAB(opts);
+            case FileType::CG:
+                load_head_CG(opts);
                 break;
             default:
                 std::cerr << "Unsupported file extension: " << file_type_ << std::endl;
@@ -117,8 +117,8 @@ public:
                 // return load_body_GRAPH<Vertex_t, Edge_t, Graph_t>();
                 std::cerr << "GRAPH format not supported yet" << std::endl;
                 exit(1);
-            case FileType::ELAB:
-                return load_body_ELAB<Vertex_t, Edge_t, Graph_t>();
+            case FileType::CG:
+                return load_body_CG<Vertex_t, Edge_t, Graph_t>();
             default:
                 std::cerr << "Unsupported file extension: " << file_type_ << std::endl;
                 exit(1);
@@ -169,7 +169,7 @@ private:
         num_edges_ = std::stoi(num_edges);
     }
 
-    void load_head_ELAB(CLIOptions& opts) {
+    void load_head_CG(CLIOptions& opts) {
         bool directed, v_weights, e_weights, unused;
         file_.read(reinterpret_cast<char*>(&directed), sizeof(bool));
         file_.read(reinterpret_cast<char*>(&v_weights), sizeof(bool));
@@ -261,10 +261,10 @@ private:
         return graph;
     }
 
-    // Load ELAB format
+    // Load CG format
     // most space and time efficient way to store and load graphs
     template<NonDataVertexType Vertex_t, NonDataEdgeType Edge_t, GraphType Graph_t>
-    Graph<Vertex_t, Edge_t, Graph_t> load_body_ELAB() {
+    Graph<Vertex_t, Edge_t, Graph_t> load_body_CG() {
         using Vertex = typename Graph<Vertex_t, Edge_t, Graph_t>::Vertex;
         
         // permenant graph memory allocation
@@ -337,7 +337,7 @@ private:
         }
         else {
             if constexpr (DataEdgeType<Edge_t>)
-                std::cerr << "Data Edge loading currently unsupported by ELAB" << std::endl;
+                std::cerr << "Data Edge loading currently unsupported by CG" << std::endl;
             else
                 std::cerr << "Uncompacted Edge Struct Error" << std::endl;
             exit(1);

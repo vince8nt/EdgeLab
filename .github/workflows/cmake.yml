@@ -81,5 +81,5 @@ jobs:
         # - Graph types: directed/undirected
         # - Vertex types: weighted/unweighted  
         # - Edge types: weighted/unweighted
-        # - File formats: EL (text) and ELAB (binary)
+        # - File formats: EL (text) and CG (binary)
         python3 ./test/test_load_save.py

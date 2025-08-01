@@ -150,15 +150,15 @@ run_benchmark "load_large_el" "./print.exe --load-file /tmp/test_large_sparse.el
 run_benchmark "convert_to_wel" "./convert.exe --load-file /tmp/test_medium_sparse.el --save-file /tmp/test_medium_sparse.wel"
 run_benchmark "load_wel" "./print.exe --load-file /tmp/test_medium_sparse.wel"
 
-run_benchmark "convert_to_elab" "./convert.exe --load-file /tmp/test_medium_sparse.el --save-file /tmp/test_medium_sparse.elab"
-run_benchmark "load_elab" "./print.exe --load-file /tmp/test_medium_sparse.elab"
+run_benchmark "convert_to_cg" "./convert.exe --load-file /tmp/test_medium_sparse.el --save-file /tmp/test_medium_sparse.cg"
+run_benchmark "load_cg" "./print.exe --load-file /tmp/test_medium_sparse.cg"
 
 # Graph Saving Benchmarks
 log_info "=== Graph Saving Benchmarks ==="
 
 run_benchmark "save_el" "./convert.exe --load-file /tmp/test_medium_sparse.el --save-file /tmp/test_save.el"
 run_benchmark "save_wel" "./convert.exe --load-file /tmp/test_medium_sparse.el --save-file /tmp/test_save.wel"
-run_benchmark "save_elab" "./convert.exe --load-file /tmp/test_medium_sparse.el --save-file /tmp/test_save.elab"
+run_benchmark "save_cg" "./convert.exe --load-file /tmp/test_medium_sparse.el --save-file /tmp/test_save.cg"
 
 # Graph Iteration Benchmarks
 log_info "=== Graph Iteration Benchmarks ==="
@@ -178,7 +178,7 @@ run_memory_benchmark "memory_large_graph" "./print.exe --load-file /tmp/test_lar
 
 # Cleanup
 log_info "Cleaning up temporary files..."
-rm -f /tmp/test_*.el /tmp/test_*.wel /tmp/test_*.elab
+rm -f /tmp/test_*.el /tmp/test_*.wel /tmp/test_*.cg
 
 # Generate summary
 log_info "Generating benchmark summary..."

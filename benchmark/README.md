@@ -70,7 +70,7 @@ chmod +x run_micro_benchmarks.sh
    - Different edge densities
 
 2. **Graph Loading**
-   - Different file formats (EL, WEL, ELAB)
+   - Different file formats (EL, WEL, CG)
    - Different graph sizes
    - Format conversion times
 
