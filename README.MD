@@ -55,6 +55,16 @@ EdgeLab supports a comprehensive set of graph types through flexible templating.
     - Custom weight value
     - Useful for algorithms that consider vertex importance
 
+- **VertexUWD<Data_t> (Unweighted with Data):** Vertex with custom data but no weight
+    - Template parameter for custom data type
+    - Default weight: `1`
+    - Useful for storing metadata without weights
+
+- **VertexWD<Data_t> (Weighted with Data):** Vertex with both weight and custom data
+    - Template parameter for custom data type
+    - Custom weight value
+    - Most flexible vertex type for complex applications
+
 ### Edge Types
 
 - **EdgeUW (Unweighted):** Basic edge with destination vertex only
@@ -64,6 +74,16 @@ EdgeLab supports a comprehensive set of graph types through flexible templating.
 - **EdgeW (Weighted):** Edge with floating-point weight
     - Custom weight value
     - Essential for weighted graph algorithms
+
+- **EdgeUWD<Data_t> (Unweighted with Data):** Edge with custom data but no weight
+    - Template parameter for custom data type
+    - Default weight: `1`
+    - Useful for storing edge metadata without weights
+
+- **EdgeWD<Data_t> (Weighted with Data):** Edge with both weight and custom data
+    - Template parameter for custom data type
+    - Custom weight value
+    - Most flexible edge type for complex applications
 
 ### Graph Direction Types
 
@@ -222,12 +242,12 @@ v 3 1
             - Up to 50% smaller file sizes than equivalent symmetrized directed graphs
     - Super fast loading and saving
         - Always linear time complexity
-        - Directed graph specs:
+        - Directed graph loading:
             - O(1) additional space 
             - O(1) read syscalls
             - No random memory accessing
-            - Directly writes edges from memory into CSR (when loading without edge data)
-        - Undirected graph specs:
+            - Directly reads edges from memory into CSR (when loading without edge data)
+        - Undirected graph loading:
             - O(num vertices) additional space (4 bytes per vertex)
             - O(num vertices) read syscalls (1 read per vertex)
             - Includes random memory accessing (not ideal for cache performance)
