@@ -9,6 +9,7 @@
 template<typename Vertex_t, typename Edge_t, GraphType Graph_t>
 struct CSR_Vertex;
 
+#pragma pack(push, 4)
 // Vertex specialization for DIRECTED and UNDIRECTED graphs
 template<typename Vertex_t, typename Edge_t>
 struct CSR_Vertex<Vertex_t, Edge_t, GraphType::DIRECTED> : public Vertex_t {
@@ -36,6 +37,7 @@ struct CSR_Vertex<Vertex_t, Edge_t, GraphType::BIDIRECTED> : public Vertex_t {
     Edge_t* edges_begin_;
     Edge_t* edges_in_begin_;
 };
+#pragma pack(pop)
 
 template<typename Vertex_t, typename Edge_t, GraphType Graph_t>
 class Graph {
