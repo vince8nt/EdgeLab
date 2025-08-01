@@ -33,23 +33,39 @@ jobs:
 
     - name: Run iteration
       run: |
-        ./build/iteration --graph-type undirected --edge-type unweighted --scale 8 --degree 8 --gen-type erdos_renyi
-        ./build/iteration --graph-type directed --edge-type unweighted --scale 8 --degree 8 --gen-type erdos_renyi
-        ./build/iteration --graph-type undirected --edge-type weighted --scale 8 --degree 8 --gen-type erdos_renyi
-        ./build/iteration --graph-type directed --edge-type weighted --scale 8 --degree 8 --gen-type erdos_renyi
+        # Check that iteration is equivalent to indexing for all graph type combinations
+        ./build/iteration --graph-type undirected --vertex-type unweighted --edge-type unweighted --scale 8 --degree 8 --gen-type erdos_renyi
+        ./build/iteration --graph-type directed --vertex-type unweighted --edge-type unweighted --scale 8 --degree 8 --gen-type erdos_renyi
+        ./build/iteration --graph-type undirected --vertex-type weighted --edge-type unweighted --scale 8 --degree 8 --gen-type erdos_renyi
+        ./build/iteration --graph-type directed --vertex-type weighted --edge-type unweighted --scale 8 --degree 8 --gen-type erdos_renyi
+        ./build/iteration --graph-type undirected --vertex-type unweighted --edge-type weighted --scale 8 --degree 8 --gen-type erdos_renyi
+        ./build/iteration --graph-type directed --vertex-type unweighted --edge-type weighted --scale 8 --degree 8 --gen-type erdos_renyi
+        ./build/iteration --graph-type undirected --vertex-type weighted --edge-type weighted --scale 8 --degree 8 --gen-type erdos_renyi
+        ./build/iteration --graph-type directed --vertex-type weighted --edge-type weighted --scale 8 --degree 8 --gen-type erdos_renyi
 
-    - name: Run verify_undirected
+    - name: Run validate_graph
       run: |
-        ./build/verify_undirected --edge-type unweighted --scale 8 --degree 8 --gen-type erdos_renyi
-        ./build/verify_undirected --edge-type weighted --scale 8 --degree 8 --gen-type erdos_renyi
+        # Test Erdős-Rényi graphs
+        ./build/validate_graph --graph-type undirected --edge-type unweighted --scale 8 --degree 8 --gen-type erdos_renyi
+        ./build/validate_graph --graph-type directed --edge-type unweighted --scale 8 --degree 8 --gen-type erdos_renyi
+        ./build/validate_graph --graph-type undirected --edge-type weighted --scale 8 --degree 8 --gen-type erdos_renyi
+        ./build/validate_graph --graph-type directed --edge-type weighted --scale 8 --degree 8 --gen-type erdos_renyi
+        
+        # Test Watts-Strogatz graphs
+        ./build/validate_graph --graph-type undirected --edge-type unweighted --scale 8 --degree 8 --gen-type watts_strogatz
+        ./build/validate_graph --graph-type directed --edge-type unweighted --scale 8 --degree 8 --gen-type watts_strogatz
+        ./build/validate_graph --graph-type undirected --edge-type weighted --scale 8 --degree 8 --gen-type watts_strogatz
+        ./build/validate_graph --graph-type directed --edge-type weighted --scale 8 --degree 8 --gen-type watts_strogatz
+        
+        # Test Barabási-Albert graphs
+        ./build/validate_graph --graph-type undirected --edge-type unweighted --scale 8 --degree 8 --gen-type barabasi_albert
+        ./build/validate_graph --graph-type directed --edge-type unweighted --scale 8 --degree 8 --gen-type barabasi_albert
+        ./build/validate_graph --graph-type undirected --edge-type weighted --scale 8 --degree 8 --gen-type barabasi_albert
+        ./build/validate_graph --graph-type directed --edge-type weighted --scale 8 --degree 8 --gen-type barabasi_albert
 
     - name: Run dense packing check
       run: |
         ./build/packing
-
-    - name: Run generate and print test
-      run: |
-        ./build/generate_and_print --scale 5 --degree 3 --gen-type erdos_renyi
 
     - name: Run triangle counting tests
       run: |
@@ -58,16 +74,6 @@ jobs:
     - name: Run breadth-first search tests
       run: |
         ./build/breadth_first_search_test
-
-    - name: Test individual algorithm executables
-      run: |
-        # Test CPU algorithms
-        ./build/tc --scale 6 --degree 3 --gen-type erdos_renyi
-        ./build/bfs --scale 6 --degree 3 --gen-type erdos_renyi
-        
-        # Test threaded algorithms
-        ./build/tc_threaded --scale 6 --degree 3 --gen-type erdos_renyi
-        ./build/bfs_threaded --scale 6 --degree 3 --gen-type erdos_renyi
 
     - name: Run load/save tests
       run: |

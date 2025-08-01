@@ -307,7 +307,7 @@ cd build
 cmake ..
 cmake --build .
 # generate graph and run algorithm
-./verify_undirected --graph-type undirected --vertex-type unweighted --edge-type unweighted --scale 20 --degree 5 --gen-type erdos_renyi
+./validate_graph --graph-type undirected --vertex-type unweighted --edge-type unweighted --scale 20 --degree 5 --gen-type erdos_renyi
 
 # load graph from file and run algorithm
 ./bfs_opencl --load-graph ../graphs/mini.el
@@ -321,7 +321,7 @@ cmake --build .
 # Run all tests (from build directory)
 ./triangle_counting_test
 ./breadth_first_search_test
-./verify_undirected --edge-type unweighted --scale 8 --degree 8 --gen-type erdos_renyi
+./validate_graph --edge-type unweighted --scale 8 --degree 8 --gen-type erdos_renyi
 
 # Run load/save tests (cross-platform Python)
 python3 ../test/test_load_save.py

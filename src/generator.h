@@ -257,12 +257,22 @@ private:
                     
                     if constexpr (Graph_t == GraphType::UNDIRECTED) {
                         // For undirected graphs, only add edges where new_vertex < selected_vertex
-                        // or add to both vertices to maintain symmetry
-                        if constexpr (WeightedEdgeType<Edge_t>) {
-                            weight_t weight = weight_dist(gen);
-                            matrix[new_vertex].push_back({selected_vertex, weight});
+                        // to satisfy the builder's constraint that dest > src
+                        if (new_vertex < selected_vertex) {
+                            if constexpr (WeightedEdgeType<Edge_t>) {
+                                weight_t weight = weight_dist(gen);
+                                matrix[new_vertex].push_back({selected_vertex, weight});
+                            } else {
+                                matrix[new_vertex].push_back({selected_vertex});
+                            }
                         } else {
-                            matrix[new_vertex].push_back({selected_vertex});
+                            // If new_vertex >= selected_vertex, add the edge to the selected_vertex instead
+                            if constexpr (WeightedEdgeType<Edge_t>) {
+                                weight_t weight = weight_dist(gen);
+                                matrix[selected_vertex].push_back({new_vertex, weight});
+                            } else {
+                                matrix[selected_vertex].push_back({new_vertex});
+                            }
                         }
                     } else {
                         // For directed graphs, add edge from new_vertex to selected_vertex
