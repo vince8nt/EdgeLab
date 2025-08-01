@@ -176,11 +176,25 @@ private:
                     }
                     
                     if (valid_rewire) {
-                        if constexpr (WeightedEdgeType<Edge_t>) {
-                            weight_t weight = weight_dist(gen);
-                            edge = Edge_t(new_dest, weight);
+                        if constexpr (Graph_t == GraphType::UNDIRECTED) {
+                            // For undirected graphs, only rewire if the new destination is greater than source
+                            if (v < new_dest) {
+                                if constexpr (WeightedEdgeType<Edge_t>) {
+                                    weight_t weight = weight_dist(gen);
+                                    edge = Edge_t(new_dest, weight);
+                                } else {
+                                    edge = Edge_t(new_dest);
+                                }
+                            }
+                            // If v >= new_dest, skip the rewiring to maintain the dest > src constraint
                         } else {
-                            edge = Edge_t(new_dest);
+                            // For directed graphs, just update the edge
+                            if constexpr (WeightedEdgeType<Edge_t>) {
+                                weight_t weight = weight_dist(gen);
+                                edge = Edge_t(new_dest, weight);
+                            } else {
+                                edge = Edge_t(new_dest);
+                            }
                         }
                     }
                 }
