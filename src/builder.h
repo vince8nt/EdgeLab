@@ -40,6 +40,13 @@ private:
 
     // verify that vector graph is valid
     void VerifyVectorGraph(VectorGraph<Vertex_t, Edge_t> &vg) {
+        if constexpr (!EmptyVertexType<Vertex_t>) {
+            if (vg.vertices.size() != vg.matrix.size()) {
+                std::cout << "Error: vertex data size does not match adjacency list size" << std::endl;
+                std::cout << "  - [" << vg.vertices.size() << " != " << vg.matrix.size() << "]" << std::endl;
+                exit(1);
+            }
+        }
         for (vertex_ID_t vertex_id = 0; vertex_id < vg.matrix.size(); vertex_id++) {
             for (auto &edge : vg.matrix[vertex_id]) {
                 if (edge.dest() >= vg.matrix.size()) {
