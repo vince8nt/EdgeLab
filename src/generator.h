@@ -27,6 +27,7 @@ public:
                 vg = GenerateErdosRenyi();
                 break;
             case GenType::WATTS_STROGATZ:
+                vg = GenerateWattsStrogatz();
                 break;
             case GenType::BARABASI_ALBERT:
                 break;
@@ -91,7 +92,111 @@ private:
         return vg;
     }
 
-    // Graph GenerateWattsStrogatz();
+    VectorGraph<Vertex_t, Edge_t> GenerateWattsStrogatz() {
+        std::mt19937 gen;
+        gen.seed(seed_);
+        std::uniform_real_distribution<float> prob_dist(0.0f, 1.0f);
+        std::uniform_int_distribution<vertex_ID_t> vertex_dist(0, num_vertices_ - 1);
+        std::uniform_int_distribution<weight_t> weight_dist(1, 256);
+        
+        VectorGraph<Vertex_t, Edge_t> vg(num_vertices_);
+        auto &matrix = vg.matrix;
+        
+        // Watts-Strogatz parameters
+        const float rewire_probability = 0.1f; // 10% probability of rewiring
+        const int k = degree_; // Each vertex connects to k/2 neighbors on each side
+        
+        // Step 1: Create regular ring lattice
+        for (vertex_ID_t v = 0; v < num_vertices_; v++) {
+            for (int j = 1; j <= k / 2; j++) {
+                vertex_ID_t u = (v + j) % num_vertices_;
+                
+                if constexpr (Graph_t == GraphType::UNDIRECTED) {
+                    // For undirected graphs, only add edges where v < u to avoid duplicates
+                    if (v < u) {
+                        if constexpr (WeightedEdgeType<Edge_t>) {
+                            weight_t weight = weight_dist(gen);
+                            matrix[v].push_back({u, weight});
+                        } else {
+                            matrix[v].push_back({u});
+                        }
+                    }
+                } else {
+                    // For directed graphs, add all edges
+                    if constexpr (WeightedEdgeType<Edge_t>) {
+                        weight_t weight = weight_dist(gen);
+                        matrix[v].push_back({u, weight});
+                    } else {
+                        matrix[v].push_back({u});
+                    }
+                }
+            }
+        }
+        
+        // Step 2: Randomly rewire edges with probability rewire_probability
+        for (vertex_ID_t v = 0; v < num_vertices_; v++) {
+            auto &edges = matrix[v];
+            for (auto &edge : edges) {
+                if (prob_dist(gen) < rewire_probability) {
+                    // Rewire this edge to a random vertex
+                    vertex_ID_t new_dest = vertex_dist(gen);
+                    
+                    // Avoid self-loops and duplicate edges
+                    bool valid_rewire = (new_dest != v);
+                    
+                    if constexpr (Graph_t == GraphType::UNDIRECTED) {
+                        // For undirected graphs, ensure we don't create duplicate edges
+                        // and maintain the v < u constraint
+                        if (v < new_dest) {
+                            // Check if edge already exists
+                            for (const auto &existing_edge : matrix[v]) {
+                                if (existing_edge.dest() == new_dest) {
+                                    valid_rewire = false;
+                                    break;
+                                }
+                            }
+                        } else {
+                            // For v >= new_dest, we need to check if the reverse edge exists
+                            for (const auto &existing_edge : matrix[new_dest]) {
+                                if (existing_edge.dest() == v) {
+                                    valid_rewire = false;
+                                    break;
+                                }
+                            }
+                        }
+                    } else {
+                        // For directed graphs, just check for self-loops and duplicates
+                        for (const auto &existing_edge : matrix[v]) {
+                            if (existing_edge.dest() == new_dest) {
+                                valid_rewire = false;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (valid_rewire) {
+                        if constexpr (WeightedEdgeType<Edge_t>) {
+                            weight_t weight = weight_dist(gen);
+                            edge = Edge_t(new_dest, weight);
+                        } else {
+                            edge = Edge_t(new_dest);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Generate random (weighted) vertices
+        if constexpr (WeightedVertexType<Vertex_t>) {
+            auto &vertices = vg.vertices;
+            vertices.reserve(num_vertices_);
+            for (vertex_ID_t v = 0; v < num_vertices_; v++) {
+                vertices.push_back(weight_dist(gen));
+            }
+        }
+        
+        return vg;
+    }
 
     // Graph GenerateBarabasiAlbert();
 
