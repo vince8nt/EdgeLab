@@ -13,44 +13,8 @@
 #include <algorithm>
 #include <cassert>
 
-enum class FileType {
-//  EXT    //    data    |        format        |   graph_t   |   edge_t   |  vertex_t  
-// --------++------------+----------------------+-------------+------------+-------------
-    EL,    // plain text | edge list            | both        | unweighted | unweighted   
-    WEL,   // plain text | edge list            | both        | weighted   | unweighted    
-    VEL,   // plain text | edge list            | both        | unweighted | weighted       
-    VWEL,  // plain text | edge list            | both        | weighted   | weighted       
-    GRAPH, // plain text | prebuilt             | directed    | both       | both           
-    CG     // binary     | prebuilt/ half built | both        | both       | both         
-};
-std::ostream& operator<<(std::ostream& os, FileType file_type) {
-    switch (file_type) {
-        case FileType::EL: os << "EL(Edge List)"; break;
-        case FileType::WEL: os << "WEL(Weighted Edge List)"; break;
-        case FileType::VEL: os << "VEL(Edge List with Vertex Weights)"; break;
-        case FileType::VWEL: os << "VWEL(Weighted Edge List with Vertex Weights)"; break;
-        case FileType::GRAPH: os << "GRAPH(METIS Graph)"; break;
-        case FileType::CG: os << "CG(Compacted Graph)"; break;
-        default: os << "Unknown File Type"; break;
-    }
-    return os;
-}
 
-// Helper to get file extension
-    FileType GetFileExtension(const std::string& filepath) {
-    std::filesystem::path p(filepath);
-    std::string ext = p.extension().string();
-    if (!ext.empty() && ext[0] == '.') ext = ext.substr(1);
-    std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c){ return std::tolower(c); });
-    if (ext == "el") return FileType::EL; // maybe use an unordered map if we add more file types
-    if (ext == "wel") return FileType::WEL;
-    if (ext == "vel") return FileType::VEL;
-    if (ext == "vwel") return FileType::VWEL;
-    if (ext == "graph") return FileType::GRAPH;
-            if (ext == "cg") return FileType::CG;
-    std::cerr << "Unsupported file extension: " << ext << std::endl;
-    exit(1);
-}
+
 
 class Loader {
 public:
