@@ -27,16 +27,9 @@ void validate_graph(Graph<Vertex_t, Edge_t, Graph_t> &graph) {
     }
 
     size_t num_compressed_edges = std::distance(graph[0].begin(), graph[graph.num_vertices() - 1].end());
-    if constexpr (Graph_t == GraphType::DIRECTED) {
-        if (num_compressed_edges != graph.num_edges()) {
-            std::cerr << "Error: Number of compressed edges does not match number of edges" << std::endl;
-            exit(1);
-        }
-    } else {
-        if (num_compressed_edges != graph.num_edges() * 2) {
-            std::cerr << "Error: Number of compressed edges does not match number of edges" << std::endl;
-            exit(1);
-        }
+    if (num_compressed_edges != graph.num_edges()) {
+        std::cerr << "Error: Number of compressed edges does not match number of edges" << std::endl;
+        exit(1);
     }
 
     for (vertex_ID_t v_id = 0; v_id < graph.num_vertices(); v_id++) {
