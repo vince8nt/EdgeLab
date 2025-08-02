@@ -7,7 +7,7 @@
 
 template<typename Vertex_t, typename Edge_t, GraphType Graph_t>
 class Builder {
-    using Vertex = Graph<Vertex_t, Edge_t, Graph_t>::Vertex;
+    using Vertex = CSR_Vertex<Vertex_t, Edge_t, Graph_t>;
 
 public:
     Builder() {}
@@ -83,10 +83,10 @@ private:
     }
 
     // sort and remove duplicate edges from AdjacencyMatrix
-    // for undirected graphs, return edges_offset vector (allows symmetrizing edges directly in CSR)
     // for directed graphs, return number of edges
+    // for undirected graphs, return edges_offset vector (allows symmetrizing edges directly in CSR)
     auto PrepAdjacencyMatrix(AdjacencyMatrix<Edge_t> &adjacency_matrix) {
-        if constexpr (Graph_t == GraphType::UNDIRECTED) {
+        if constexpr (Graph_t == GraphType::UNDIRECTED or Graph_t == GraphType::BIDIRECTED) {
             std::vector<edge_ID_t> edges_offset(adjacency_matrix.size() + 1);
             for (vertex_ID_t vertex_id = 0; vertex_id < adjacency_matrix.size(); vertex_id++) {
                 AdjacencyList<Edge_t> &adjacency_list = adjacency_matrix[vertex_id];
@@ -110,36 +110,36 @@ private:
 
     // create CSR (undirected graphs only)
     Graph<Vertex_t, Edge_t, Graph_t> FlattenVectorGraph( VectorGraph<Vertex_t, Edge_t> &vg,
-        std::vector<edge_ID_t> &edges_offset) requires (Graph_t == GraphType::UNDIRECTED) {
-            Vertex* vertices = (Vertex*)malloc((vg.matrix.size() + 1) * sizeof(Vertex));
-            Edge_t* edges = (Edge_t*)malloc(edges_offset.back() * sizeof(Edge_t));
-            
-            // fill in vertices
-            vertex_ID_t vertex_id = 0;
-            for (; vertex_id < vg.matrix.size(); vertex_id++) {
-                auto edges_begin = edges + edges_offset[vertex_id];
-                if constexpr (EmptyVertexType<Vertex_t>)
-                    new (&vertices[vertex_id]) Vertex(edges_begin);
-                else   
-                    new (&vertices[vertex_id]) Vertex(vg.vertices[vertex_id], edges_begin);
-            }
-            // end vertex (only used for its edge offset)
+            std::vector<edge_ID_t> &edges_offset) requires (Graph_t == GraphType::UNDIRECTED) {
+        Vertex* vertices = (Vertex*)malloc((vg.matrix.size() + 1) * sizeof(Vertex));
+        Edge_t* edges = (Edge_t*)malloc(edges_offset.back() * sizeof(Edge_t));
+        
+        // fill in vertices
+        vertex_ID_t vertex_id = 0;
+        for (; vertex_id < vg.matrix.size(); vertex_id++) {
             auto edges_begin = edges + edges_offset[vertex_id];
             if constexpr (EmptyVertexType<Vertex_t>)
                 new (&vertices[vertex_id]) Vertex(edges_begin);
-            else
-                new (&vertices[vertex_id]) Vertex(Vertex_t(), edges_begin);
-    
-            // fill in edges (symmetrize in place)
-            for (vertex_ID_t vertex_id = 0; vertex_id < vg.matrix.size(); vertex_id++) {
-                for (auto &edge : vg.matrix[vertex_id]) {
-                    edges[edges_offset[vertex_id]++] = edge;
-                    edges[edges_offset[edge.dest()]++] = edge.inverse(vertex_id);
-                }
-            }
-
-            return Graph<Vertex_t, Edge_t, Graph_t>(vg.matrix.size(), vertices, edges_offset.back(), edges);
+            else   
+                new (&vertices[vertex_id]) Vertex(vg.vertices[vertex_id], edges_begin);
         }
+        // end vertex (only used for its edge offset)
+        auto edges_begin = edges + edges_offset[vertex_id];
+        if constexpr (EmptyVertexType<Vertex_t>)
+            new (&vertices[vertex_id]) Vertex(edges_begin);
+        else
+            new (&vertices[vertex_id]) Vertex(Vertex_t(), edges_begin);
+
+        // fill in edges (symmetrize in place)
+        for (vertex_ID_t vertex_id = 0; vertex_id < vg.matrix.size(); vertex_id++) {
+            for (auto &edge : vg.matrix[vertex_id]) {
+                edges[edges_offset[vertex_id]++] = edge;
+                edges[edges_offset[edge.dest()]++] = edge.inverse(vertex_id);
+            }
+        }
+
+        return Graph<Vertex_t, Edge_t, Graph_t>(vg.matrix.size(), vertices, edges_offset.back(), edges);
+    }
 
     // create CSR (directed graphs only)
     Graph<Vertex_t, Edge_t, Graph_t> FlattenVectorGraph( VectorGraph<Vertex_t, Edge_t> &vg,
@@ -165,6 +165,43 @@ private:
             new (&vertices[vertex_id]) Vertex(Vertex_t(), edges_begin);
 
         return Graph<Vertex_t, Edge_t, Graph_t>(vg.matrix.size(), vertices, num_edges, edges);
+    }
+
+    // create CSR (bidirected graphs only)
+    Graph<Vertex_t, Edge_t, Graph_t> FlattenVectorGraph( VectorGraph<Vertex_t, Edge_t> &vg,
+            std::vector<edge_ID_t> &edges_offset) requires (Graph_t == GraphType::BIDIRECTED) {
+        Vertex* vertices = (Vertex*)malloc((vg.matrix.size() + 1) * sizeof(Vertex));
+        Edge_t* edges = (Edge_t*)malloc(edges_offset.back() * sizeof(Edge_t));
+        Edge_t* edges_in = (Edge_t*)malloc(edges_offset.back() * sizeof(Edge_t));
+        
+        // fill in vertices
+        auto edges_begin = edges;
+        vertex_ID_t vertex_id = 0;
+        for (; vertex_id < vg.matrix.size(); vertex_id++) {
+            auto edges_in_begin = edges_in + edges_offset[vertex_id];
+            if constexpr (EmptyVertexType<Vertex_t>)
+                new (&vertices[vertex_id]) Vertex(edges_begin, edges_in_begin);
+            else   
+                new (&vertices[vertex_id]) Vertex(vg.vertices[vertex_id], edges_begin, edges_in_begin);
+            edges_begin += vg.matrix[vertex_id].size();
+        }
+        // end vertex (only used for its edge offset)
+        auto edges_in_begin = edges_in + edges_offset[vertex_id];
+        if constexpr (EmptyVertexType<Vertex_t>)
+            new (&vertices[vertex_id]) Vertex(edges_begin, edges_in_begin);
+        else
+            new (&vertices[vertex_id]) Vertex(Vertex_t(), edges_begin, edges_in_begin);
+
+        // fill in edges (create inverse edges in place)
+        edges_begin = edges;
+        for (vertex_ID_t vertex_id = 0; vertex_id < vg.matrix.size(); vertex_id++) {
+            for (auto &edge : vg.matrix[vertex_id]) {
+                *(edges_begin++) = edge;
+                edges_in[edges_offset[edge.dest()]++] = edge.inverse(vertex_id);
+            }
+        }
+
+        return Graph<Vertex_t, Edge_t, Graph_t>(vg.matrix.size(), vertices, edges_offset.back(), edges, edges_in);
     }
 
 

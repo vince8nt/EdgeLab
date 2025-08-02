@@ -229,7 +229,7 @@ private:
     // most space and time efficient way to store and load graphs
     template<NonDataVertexType Vertex_t, NonDataEdgeType Edge_t, GraphType Graph_t>
     Graph<Vertex_t, Edge_t, Graph_t> load_body_CG() {
-        using Vertex = typename Graph<Vertex_t, Edge_t, Graph_t>::Vertex;
+        using Vertex = typename CSR_Vertex<Vertex_t, Edge_t, Graph_t>;
         
         // permenant graph memory allocation
         size_t vertices_size = (num_vertices_ + 1) * sizeof(Vertex);
