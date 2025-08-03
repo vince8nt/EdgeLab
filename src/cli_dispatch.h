@@ -68,7 +68,7 @@ void dispatch_cli(CLIOptions& opts, Callable&& func) {
                             CLI_create_graph<Callable, VertexUW, EdgeUW, GraphType::DIRECTED>(opts, std::forward<Callable>(func));
                             break;
                         case GraphType::BIDIRECTED:
-                            CLI_create_graph<Callable, VertexUW, EdgeUW, GraphType::BIDIRECTED>(opts, std::forward<Callable>(func));
+                            // CLI_create_graph<Callable, VertexUW, EdgeUW, GraphType::BIDIRECTED>(opts, std::forward<Callable>(func));
                             break;
                     }
                     break;
@@ -81,7 +81,7 @@ void dispatch_cli(CLIOptions& opts, Callable&& func) {
                             CLI_create_graph<Callable, VertexUW, EdgeW, GraphType::DIRECTED>(opts, std::forward<Callable>(func));
                             break;
                         case GraphType::BIDIRECTED:
-                            CLI_create_graph<Callable, VertexUW, EdgeW, GraphType::BIDIRECTED>(opts, std::forward<Callable>(func));
+                            // CLI_create_graph<Callable, VertexUW, EdgeW, GraphType::BIDIRECTED>(opts, std::forward<Callable>(func));
                             break;
                     }
                     break;
@@ -101,7 +101,7 @@ void dispatch_cli(CLIOptions& opts, Callable&& func) {
                             CLI_create_graph<Callable, VertexW, EdgeUW, GraphType::DIRECTED>(opts, std::forward<Callable>(func));
                             break;
                         case GraphType::BIDIRECTED:
-                            CLI_create_graph<Callable, VertexW, EdgeW, GraphType::BIDIRECTED>(opts, std::forward<Callable>(func));
+                            // CLI_create_graph<Callable, VertexW, EdgeW, GraphType::BIDIRECTED>(opts, std::forward<Callable>(func));
                             break;
                     }
                     break;
@@ -114,7 +114,7 @@ void dispatch_cli(CLIOptions& opts, Callable&& func) {
                             CLI_create_graph<Callable, VertexW, EdgeW, GraphType::DIRECTED>(opts, std::forward<Callable>(func));
                             break;
                         case GraphType::BIDIRECTED:
-                            CLI_create_graph<Callable, VertexW, EdgeW, GraphType::BIDIRECTED>(opts, std::forward<Callable>(func));
+                            // CLI_create_graph<Callable, VertexW, EdgeW, GraphType::BIDIRECTED>(opts, std::forward<Callable>(func));
                             break;
                     }
                     break;

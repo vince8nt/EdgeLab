@@ -21,93 +21,48 @@ A high-performance C++20 graph library for efficient graph loading, generation, 
 
 ---
 
-## Core Graph API
-
-- **Graph:** Efficient CSR format graph.
-    - **num_vertices():** Returns the number of vertices (densely packed) in the graph.
-    - **num_edges():** Returns the total number of directed edges in the CSR representation.
-    - **num_undirected_edges():** Returns the number of unique undirected edges (only for undirected graphs).
-    - **Iteration/Indexing:** Exposes a `VertexRef` type for access via iteration and/or indexing.
-    - **Printing:** The graph can be printed to a stream for debugging using the `<<` operator.
-- **VertexRef:** An 8-byte struct for efficient passing by value.
-    - **num_edges():** The number of outgoing edges from this vertex.
-    - **Iteration/Indexing:** Exposes an `EdgeType` for access via iteration and/or indexing.
-    - **has_edge_to(vertex):** Determines if the directed edge exists in O(log num_edges).
-    - **edge_to(vertex):** Returns an `EdgeType` iterator or `end()` in O(log num_edges).
-    - **weight():** Returns the weight or `1.0` for graphs with unweighted vertices.
-    - **data():** Returns the optional custom data associated with the given vertex.
-- **EdgeType:**
-    - **weight():** Returns the weight or `1.0` for graphs with unweighted edges.
-    - **data():** Returns the optional custom data associated with the given edge.
-
----
-
-## Graph Types
+## Graph Representation
 
 EdgeLab supports a comprehensive set of graph types through flexible templating. The library provides different vertex and edge types that can be combined to create various graph configurations.
 
-### Vertex Types
+### Basic Graph Structure
 
-- **VertexUW (Unweighted):** Basic vertex with no additional data
-    - Default weight: `1`
-    - Memory efficient for simple graphs
+- EdgeLab Graphs are composed of Vertices and Edges
+- Vertices are identified by unique 32-bit unsigned integers (densely packed)
+- Edges connect vertices, having a source and destination vertex
+- An edge connecting source vertex ID (u) to destination (v) is written as (u, v)
+- We define a vertex's **degree** as the number of edges it is a source to
 
-- **VertexW (Weighted):** Vertex with floating-point weight
-    - Custom weight value
-    - Useful for algorithms that consider vertex importance
+### Graph Storage Format
 
-- **VertexUWD<Data_t> (Unweighted with Data):** Vertex with custom data but no weight
-    - Template parameter for custom data type
-    - Default weight: `1`
-    - Useful for storing metadata without weights
-
-- **VertexWD<Data_t> (Weighted with Data):** Vertex with both weight and custom data
-    - Template parameter for custom data type
-    - Custom weight value
-    - Most flexible vertex type for complex applications
-
-### Edge Types
-
-- **EdgeUW (Unweighted):** Basic edge with destination vertex only
-    - Default weight: `1`
-    - Memory efficient for simple graphs
-
-- **EdgeW (Weighted):** Edge with floating-point weight
-    - Custom weight value
-    - Essential for weighted graph algorithms
-
-- **EdgeUWD<Data_t> (Unweighted with Data):** Edge with custom data but no weight
-    - Template parameter for custom data type
-    - Default weight: `1`
-    - Useful for storing edge metadata without weights
-
-- **EdgeWD<Data_t> (Weighted with Data):** Edge with both weight and custom data
-    - Template parameter for custom data type
-    - Custom weight value
-    - Most flexible edge type for complex applications
+- EdgeLab graphs are stored in Condensed Sparse Row (CSR) format
+- Vertices, and a list of their edges, can be indexed via vertex ID in O(1) time
+- The lists of edges only contain the destination vertex IDs, but not the source IDs
+- The lists of edges are each sorted by increasing destination vertex IDs.
+- Finding an edge from a given vertex to a destination ID, can be done in O(log degree) time
 
 ### Graph Direction Types
 
 EdgeLab supports three graph direction types with automatic promotion logic:
 
-- **GraphType::UNDIRECTED:** Undirected graph where edges do not have a direction
-    - Edge (u,v) implies edge (v,u) exists (and has the same weight/data)
-    - Automatically symmetrized during graph construction
-    - **num_edges() returns the total number of directed edges** (2 × unique undirected edges)
-    - **num_undirected_edges() returns the number of unique undirected edges**
-    - Useful for modeling symmetric relationships
-
 - **GraphType::DIRECTED:** Directed graph with outgoing edges
     - Asymmetric relationships: Edge (u,v) exists independently of edge (v,u)
-    - Only stores outgoing edges for space efficiency
-    - **num_edges() returns the number of directed edges**
-    - Useful for algorithms that only need to traverse forwards
+    - Self loops are allowed: Edge (v,v) connects a vertex to itself
+    - Duplicate edges are **not** allowed (automatically removed during graph construction)
+    - Each vertex has efficient access to **only** its outgoing edges (for space efficiency)
 
 - **GraphType::BIDIRECTED:** Directed graph with both incoming and outgoing edges
     - Asymmetric relationships: Edge (u,v) exists independently of edge (v,u)
-    - Stores both outgoing and incoming edges for algorithm efficiency
-    - **num_edges() returns the number of directed edges** (excluding incoming edges)
-    - Useful for algorithms that need to traverse both directions
+    - Self loops are allowed: Edge (v,v) connects a vertex to itself
+    - Duplicate edges are **not** allowed (automatically removed during graph construction)
+    - Each vertex has efficient access to both its outgoing and imcominng edges (for algorithm efficiency)
+
+- **GraphType::UNDIRECTED:** Undirected graph where edges do not have a direction
+    - Edge (u,v) implies a seperate edge (v,u) exists (and has the same weight/data)
+    - Will always have an even number of edges
+    - Self loops are **not** allowed (automatically removed during graph construction)
+    - Duplicate edges are **not** allowed (automatically removed during graph construction)
+    - Edges are automatically symmetrized during graph construction
 
 #### Graph Type Promotion Logic
 
@@ -121,9 +76,124 @@ The graph type system supports automatic promotion based on algorithm requiremen
   - `DIRECTED` → `BIDIRECTED` (when algorithm requires bidirected)
   - `DIRECTED` → `UNDIRECTED` (when algorithm requires undirected)
 
-This design allows algorithms to specify their computational needs while the runtime handles the necessary graph transformations automatically. If an algorithm recieves an `UNDIRECTED` graph when that wasn't it's specification, the algorithm should still work as intended. This is because `UNDIRECTED` can be thought of as a sub type to both `DIRECTED` and `BIDIRECTED` (since it is composed of directed edges, and its symmetry guarentee makes vertices aware of their incoming edges). Infact, `UNDIRECTED` graph maintain the full incoming edge interface present in `BIDIRECTED` graph, allowing `BIDIRECTED` algorithms to work with a "polymorphic" graph type.
+This design allows algorithms to specify their computational needs while the runtime handles the necessary graph transformations automatically. If an algorithm recieves an `UNDIRECTED` graph when that wasn't it's specification, the algorithm should still work as intended. This is because `UNDIRECTED` can be thought of as a sub type to both `DIRECTED` and `BIDIRECTED` (since it is composed of directed edges, and its symmetry guarentee makes vertices aware of their outgoing and incoming edges). Infact, `UNDIRECTED` graph maintain the full incoming edge interface present in `BIDIRECTED` graph, allowing `BIDIRECTED` algorithms to work with a "polymorphic" graph type.
 
-### Graph File Formats
+### Vertex Types
+
+- **VertexUW (Unweighted):** Basic vertex with no additional data
+    - Default weight: `1`
+
+- **VertexW (Weighted):** Vertex with floating-point weight
+    - Custom weight value
+
+- **VertexUWD<Data_t> (Unweighted with Data):** Vertex with custom data but no weight
+    - Template parameter for custom data type
+    - Default weight: `1`
+
+- **VertexWD<Data_t> (Weighted with Data):** Vertex with both weight and custom data
+    - Template parameter for custom data type
+    - Custom weight value
+
+### Edge Types
+
+- **EdgeUW (Unweighted):** Basic edge with destination vertex only
+    - Default weight: `1`
+
+- **EdgeW (Weighted):** Edge with floating-point weight
+    - Custom weight value
+
+- **EdgeUWD<Data_t> (Unweighted with Data):** Edge with custom data but no weight
+    - Template parameter for custom data type
+    - Default weight: `1`
+
+- **EdgeWD<Data_t> (Weighted with Data):** Edge with both weight and custom data
+    - Template parameter for custom data type
+    - Custom weight value
+
+### Example Graph Type Combinations
+
+```cpp
+// Simple unweighted undirected graph
+using SimpleGraph = Graph<VertexUW, EdgeUW, GraphType::UNDIRECTED>;
+
+// Weighted directed graph
+using WeightedGraph = Graph<VertexW, EdgeW, GraphType::DIRECTED>;
+
+// Graph with custom vertex and edge data
+struct VertexData { std::string label; int category; };
+struct EdgeData { double reliability; int timestamp; };
+using CustomGraph = Graph<VertexWD<VertexData>, EdgeWD<EdgeData>, GraphType::DIRECTED>;
+
+// Memory-efficient unweighted graph
+using EfficientGraph = Graph<VertexUW, EdgeUW, GraphType::DIRECTED>;
+```
+
+### Type Concepts and Constraints
+
+EdgeLab uses C++20 concepts to ensure type safety at compile time:
+
+- **VertexType:** Ensures vertex types derive from `VertexUW`
+- **EdgeType:** Ensures edge types derive from `EdgeUW`
+- **WeightedVertexType:** Identifies vertex types with weights
+- **WeightedEdgeType:** Identifies edge types with weights
+- **DataVertexType:** Identifies vertex types with custom data
+- **DataEdgeType:** Identifies edge types with custom data
+
+These concepts enable compile-time validation and optimization based on the specific graph type being used.
+
+---
+
+## Core Graph API
+
+- **Graph:** Efficient CSR format graph.
+    - **num_vertices():** Returns the number of vertices (densely packed) in the graph.
+    - **num_edges():** Returns the total number of directed edges in the CSR representation.
+    - **num_undirected_edges():** Returns the number of unordered pairs of directly connected vertices.
+    - **Iteration/Indexing:** Exposes a `VertexRef` type for access via iteration and/or indexing.
+    - **Printing:** The graph can be printed to a stream for debugging using the `<<` operator.
+
+- **VertexRef:** An 8-byte struct for efficient passing by value.
+    - **degree():** The number of outgoing edges from this vertex.
+    - **Iteration/Indexing:** Exposes an `EdgeType` for access via iteration and/or indexing.
+    - **has_edge_to(vertex):** Determines if the directed edge exists in O(log degree).
+    - **get_edge_to(vertex):** Returns an `EdgeType` iterator or `end()` in O(log degree).
+    - **weight():** Returns the weight or `1` for graphs with unweighted vertices.
+    - **data():** Returns the optional custom data associated with the given vertex.
+    **Exclusive to `BIDIRECTED` and `UNDIRECTED` graphs:**
+        - **in_degree():** The number of incoming edges to this vertex.
+        - **in():** Returns an iterator for incoming edges
+        - **in_edge()** Indexes an incoming edge
+        - **has_edge_from(vertex):** Determines if the directed edge exists in O(log degree).
+        - **get_edge_from(vertex):** Returns an (inverted) `EdgeType` iterator or `end()` in O(log degree).
+
+- **EdgeType:**
+    - **dest()**  Returns the destination vertex ID
+    - **weight():** Returns the weight or `1` for graphs with unweighted edges.
+    - **data():** Returns the optional custom data associated with the given edge.
+
+### Graph Traversal
+
+```cpp
+// Traverse via indexing
+for (vertex_ID_t u = 0; u < graph.num_vertices(); ++u) {
+    for (vertex_ID_t i = 0; i < graph[v].size(); i++) {
+        // graph[v][i].dest(), graph[v][i].weight(), etc.
+    }
+}
+```
+
+```cpp
+// Traverse via iteration
+for (auto vertexRef : graph) {
+    for (const auto& edge : vertexRef) {
+        // edge.dest(), edge.weight(), etc.
+    }
+}
+```
+
+---
+
+## Graph File Formats
 
 EdgeLab supports multiple file formats for loading and saving graphs.
 
@@ -131,41 +201,17 @@ EdgeLab supports multiple file formats for loading and saving graphs.
     - Each example file encoding represents a variation of this graph
         - (potentially dropping vertex weights, edge weights, and/or directedness)
     - A complete list of "mini" encoding variations can be found in the graphs/ directory
-```
-[ ID: 0 ]        wt: 1      [ ID: 1 ]
-[ wt: 1 ]  -------------->  [ wt: 6 ]
-                          
-   ^      \               /    |
-   |       \wt: 2   wt: 1/     |
-   |        \           /      |
-   |         \         /       |
-   |          \       /        |
-   |           \     /         |
-   |            \   /          |
-   |             \ /           |
-   |wt: 3         X            |wt: 5
-   |             / \           |
-   |            /   \          |
-   |           /     \         |
-   |          /       \        |
-   |         /         \       |
-   |        /           \      |
-   |       /             \     |
-   |      V               V    V
-                          
-[ ID: 3 ]        wt: 2      [ ID: 2 ]
-[ wt: 4 ]  <--------------  [ wt: 3 ]
-```
+![Mini Graph](graphs/mini.svg)
 
 - **EL (Edge List):** Plain text edge list format
     - Unweighted edges and vertices
-    - Defaults to undirected, but can be set to directed via comment on the first line
+    - Defaults to directed, but can be set to undirected via comment on the first line
     - Edges are formatted as: `<source> <destination>`
     - Vertices must be unsigned 32-bit integers.
     - Vertices must be (mostly) densely packed (gaps are included as vertices with no edges)
     - Edges can come in any order and duplicate edges are ok
 ```markdown
-# directed
+# undirected
 0 1
 0 2
 1 2
@@ -211,7 +257,7 @@ v 2 3
 - **VWEL (Weighted Edge List with Vertex Weights):** Plain text format with both weights
     - Weighted edges and vertices
 ```markdown
-# directed
+# undirected
 v 0 1
 v 1 6
 v 2 3
@@ -280,9 +326,10 @@ v 3 1
             - Includes random memory accessing (not ideal for cache performance)
             - While worse than directed graph specs, smaller file size makes up for it
     - all numerical values are unsigned integer types (for well defined bit placement)
-    - 16 byte Header formatted as: `<flags>(4 bytes) <num vertices>(4 bytes) <num edges>(8 bytes)`
+    - 24 byte Header formatted as: `<flags>(4b) <vertices>(4b) <edges>(8b) <undirected edges>(8b)`
         - Flag bytes specify the booleans: `<directed> <v weighted> <e weighted> <unused>`
         - The unused flag alligns the file's integers on a 4-byte boundary (for maximum performance)
+        - The `<undirected edges>` is to allow for efficient promotion from `DIRECTED` to `UNDIRECTED`
     - Vertex info (repeated `<num vertices>` times):
         - Format: `<weight>(4 bytes)? <degree (num outgoing edges)>(4 bytes)`
     - Edges info (repeated `<num edges>` times):
@@ -294,10 +341,11 @@ v 3 1
             - CG `<num edges>` and `<degree>` values represent directed edge counts **after symmetrization**
             - Self loops are not possible for undirected graphs
 ```c
-// CG header data (16 bytes)
+// CG header data (24 bytes)
 0x00 0x01 0x01 0x00   // 4 x 8-bit flags for undirected graph with vertex and edge weights
 0x00000004            // 32-bit vertex count for 4 vertices
-0x0000000000000006    // 64-bit edge count for 6 edges
+0x000000000000000C    // 64-bit edge count for 12 directed edges
+0x0000000000000006    // 64-bit edge count for 6 undirected edges
 // CG vertex data
 0x00000001 0x00000003 // Vertex ID=0, weight=1, degree=3
 0x00000006 0x00000003
@@ -311,43 +359,289 @@ v 3 1
 // File size for this graph is 96 bytes
 ```
 
-### Example Graph Type Combinations
+---
 
-```cpp
-// Simple unweighted undirected graph
-using SimpleGraph = Graph<VertexUW, EdgeUW, GraphType::UNDIRECTED>;
+## Graph Generators
 
-// Weighted directed graph
-using WeightedGraph = Graph<VertexW, EdgeW, GraphType::DIRECTED>;
+EdgeLab provides three built-in graph generation algorithms for creating synthetic graphs with specific structural properties. These generators support all graph types (directed/undirected) and vertex/edge weight configurations. These generators pseudo-random, but deterministic for reproducible results.
 
-// Graph with custom vertex and edge data
-struct VertexData { std::string label; int category; };
-struct EdgeData { double reliability; int timestamp; };
-using CustomGraph = Graph<VertexWD<VertexData>, EdgeWD<EdgeData>, GraphType::DIRECTED>;
+### Generation Parameters
 
-// Memory-efficient unweighted graph
-using EfficientGraph = Graph<VertexUW, EdgeUW, GraphType::DIRECTED>;
+All generators use two key parameters:
+
+- **Scale:** Determines the number of vertices as `2^scale`
+    - Valid range: 0 to 32 (1 to 4,294,967,296 vertices)
+    - Higher scales create larger graphs for performance testing
+
+- **Degree:** Controls the average number of edges per vertex
+    - Valid range: 1+
+
+### Available Generators
+
+#### 1. Erdos-Renyi (Random Graph)
+**CLI Option:** `--gen-type erdos_renyi`
+
+Generates random graphs where each possible edge exists with equal probability.
+
+**Properties:**
+- **Structure:** Random connectivity with Poisson degree distribution
+- **Use Cases:** Baseline performance testing, random network modeling
+- **Parameters:** 
+    - Scale: Controls graph size
+    - Degree: Controls edge density (average degree)
+- **Behavior:**
+    - Approximately even degree distrubition across all vertices
+
+**Example:**
+```bash
+./validate_graph --graph-type undirected --vertex-type unweighted --edge-type weighted \
+    --scale 16 --degree 8 --gen-type erdos_renyi
 ```
 
-### Type Concepts and Constraints
+#### 2. Watts-Strogatz (Small-World Network)
+**CLI Option:** `--gen-type watts_strogatz`
 
-EdgeLab uses C++20 concepts to ensure type safety at compile time:
+Generates small-world networks that exhibit high clustering and short average path lengths.
 
-- **VertexType:** Ensures vertex types derive from `VertexUW`
-- **EdgeType:** Ensures edge types derive from `EdgeUW`
-- **WeightedVertexType:** Identifies vertex types with weights
-- **WeightedEdgeType:** Identifies edge types with weights
-- **DataVertexType:** Identifies vertex types with custom data
-- **DataEdgeType:** Identifies edge types with custom data
+**Properties:**
+- **Structure:** Starts with a regular ring lattice, then randomly rewires edges
+- **Use Cases:** Social networks, neural networks, power grids
+- **Parameters:**
+    - Scale: Controls graph size
+    - Degree: Controls initial connectivity (k/2 neighbors on each side)
+    - Rewiring probability: Fixed at 10% for edge rewiring
+- **Behavior:**
+    - Creates a regular ring lattice where each vertex connects to k/2 neighbors on each side
+    - Randomly rewires each edge with 10% probability to create shortcuts
+    - Maintains high clustering while reducing average path length
 
-These concepts enable compile-time validation and optimization based on the specific graph type being used.
+**Example:**
+```bash
+./validate_graph --graph-type undirected --vertex-type weighted --edge-type unweighted \
+    --scale 14 --degree 6 --gen-type watts_strogatz
+```
+
+#### 3. Barabasi-Albert (Scale-Free Network)
+**CLI Option:** `--gen-type barabasi_albert`
+
+Generates scale-free networks with power-law degree distribution, modeling preferential attachment.
+
+**Properties:**
+- **Structure:** Growth model where new vertices preferentially attach to high-degree vertices
+- **Use Cases:** Internet topology, citation networks, protein interaction networks
+- **Parameters:**
+    - Scale: Controls final graph size
+    - Degree: Controls initial clique size (m0) and edges per new vertex (m)
+    - m0 = min(degree, num_vertices): Initial complete graph size
+    - m = max(1, degree/2): Edges added per new vertex
+- **Behavior:**
+    - Starts with a complete graph of m0 vertices
+    - Adds remaining vertices one by one
+    - Each new vertex connects to m existing vertices with probability proportional to their degree
+    - Results in power-law degree distribution
+
+**Example:**
+```bash
+./validate_graph --graph-type directed --vertex-type unweighted --edge-type weighted \
+    --scale 18 --degree 4 --gen-type barabasi_albert
+```
+
+### Weight Generation
+
+When using weighted vertices or edges, all generators use the same weight generation strategy:
+
+- **Vertex Weights:** Random integers from 1 to 256
+- **Edge Weights:** Random integers from 1 to 256
+
+### Performance Considerations
+
+- **Memory Usage:** Graphs require approximately `O(vertices + edges)` memory
+- **Generation Time:** Approximately `O(edges * log degree)`
+- **Scaling:** Higher scales create exponentially larger graphs for stress testing
+
+
 
 ---
 
-### CLI & Dispatch
+## CLI & Dispatch
 
-- **CLI (src/cli.h):** Command-line interface for specifying generator options (graph type, vertex/edge type, scale, degree, generator type) or file loading options.
-- **Dispatching (src/cli_dispatch.h):** Generic dispatch system for instantiating templated functions via CLI options. This allows users to write graph algorithms generalized for any combination of Vertex/Edge/Graph type, without any runtime overhead.
+EdgeLab provides a powerful command-line interface (CLI) and type dispatch system that enables writing generic graph algorithms that work with any combination of vertex/edge types and graph directions without runtime overhead.
+
+### Command Line Interface (CLI)
+
+The CLI system (`src/cli.h`) provides a unified interface for both graph generation and file loading operations.
+
+#### CLI Options
+
+**Graph Generation Mode:**
+```bash
+--graph-type <directed|undirected>     # Graph direction (default: undirected)
+--vertex-type <unweighted|weighted>    # Vertex weight configuration (default: unweighted)
+--edge-type <unweighted|weighted>      # Edge weight configuration (default: unweighted)
+--scale <int>                          # Graph size as 2^scale (required)
+--degree <int>                         # Average edges per vertex (required)
+--gen-type <erdos_renyi|watts_strogatz|barabasi_albert>  # Generator type (required)
+--save-file <path>                     # Optional: save generated graph to file (if supported by the executable)
+```
+
+**File Loading Mode:**
+```bash
+--load-file <path>                     # Load graph from file (mutually exclusive with generation)
+--save-file <path>                     # Optional: save graph to file (if supported by the executable)
+```
+
+#### CLI Usage Examples
+
+```bash
+# Generate a small undirected graph for testing
+./validate_graph --scale 8 --degree 4 --gen-type erdos_renyi
+
+# Generate a large directed weighted graph
+./bfs --graph-type directed --vertex-type weighted --edge-type weighted \
+    --scale 16 --degree 8 --gen-type barabasi_albert
+
+# Load graph from file and save in different format
+./converter --load-file input.el --save-file graphs/output.cg
+
+# Generate graph and save to file
+./converter --scale 12 --degree 6 --gen-type watts_strogatz --save-file ws_12_16.cg
+```
+
+### Type Dispatch System
+
+The dispatch system (`src/cli_dispatch.h`) automatically instantiates templated functions with the correct vertex/edge/graph types based on CLI options. This eliminates the need to write separate code paths for different graph configurations.
+
+#### How It Works
+
+1. **CLI Parsing:** Parses command-line arguments into `CLIOptions` structure
+2. **Type Resolution:** Maps CLI enums to internal C++ types
+3. **Graph Creation:** Either generates a new graph or loads from file
+4. **Function Dispatch:** Calls the provided functor with the correct template parameters
+
+#### Supported Type Combinations
+
+The dispatch system supports all combinations of:
+- **Graph Types:** `UNDIRECTED`, `DIRECTED`, `BIDIRECTED` (with automatic promotion)
+- **Vertex Types:** `VertexUW` (unweighted), `VertexW` (weighted) (with automatic promotion to data vertices)
+- **Edge Types:** `EdgeUW` (unweighted), `EdgeW` (weighted) (with automatic promotion to data edges)
+
+#### Writing Dispatchable Algorithms
+
+**Method 1: Functor with Templated Operator**
+```cpp
+struct MyAlgorithm {
+    template<typename V, typename E, GraphType G>
+    void operator()(Graph<V, E, G>& graph) const {
+        // Your algorithm implementation here
+        // V = Vertex type, E = Edge type, G = Graph direction
+        for (auto vertex : graph) {
+            for (const auto& edge : vertex) {
+                // Process edge
+            }
+        }
+    }
+};
+
+int main(int argc, char** argv) {
+    CLIOptions opts = parse_cli(argc, argv);
+    dispatch_cli(opts, MyAlgorithm{});
+    return 0;
+}
+```
+
+**Method 2: Generic Lambda (C++20)**
+```cpp
+int main(int argc, char** argv) {
+    CLIOptions opts = parse_cli(argc, argv);
+    dispatch_cli(opts, [](auto& graph) {
+        // Your algorithm implementation here
+        // Compiler automatically deduces V, E, G types
+        std::cout << "Graph has " << graph.num_vertices() << " vertices\n";
+    });
+    return 0;
+}
+```
+
+**Method 3: Algorithm with Parameters**
+```cpp
+struct AlgorithmWithParams {
+    std::string output_file;
+    int source_vertex;
+    
+    template<typename V, typename E, GraphType G>
+    void operator()(Graph<V, E, G>& graph) const {
+        // Use graph, output_file, and source_vertex
+        auto result = run_algorithm(graph, source_vertex);
+        save_result(result, output_file);
+    }
+};
+
+int main(int argc, char** argv) {
+    CLIOptions opts = parse_cli(argc, argv);
+    dispatch_cli(opts, AlgorithmWithParams{"output.txt", 0});
+    return 0;
+}
+```
+
+#### Graph Type Promotion
+
+The dispatch system automatically handles graph type promotion based on algorithm requirements:
+
+```cpp
+// Algorithm requires bidirected graph
+dispatch_cli<MyAlgorithm, GraphType::BIDIRECTED>(opts, MyAlgorithm{});
+
+// Algorithm works with any graph type (default)
+dispatch_cli(opts, MyAlgorithm{});
+```
+
+**Promotion Rules:**
+- `UNDIRECTED` → `UNDIRECTED` (no change)
+- `DIRECTED` → `DIRECTED` (when algorithm requires directed)
+- `DIRECTED` → `BIDIRECTED` (when algorithm requires bidirected)
+- `DIRECTED` → `UNDIRECTED` (when algorithm requires undirected)
+
+#### Complete Example: BFS Algorithm
+
+```cpp
+#include "cli_dispatch.h"
+#include "breadth_first_search.h"
+
+struct BFSDispatcher {
+    template<typename V, typename E, GraphType G>
+    void operator()(Graph<V, E, G>& graph) const {
+        vertex_ID_t src = 0;
+        vertex_ID_t dest = graph.num_vertices() - 1;
+        
+        auto timer = timer_start();
+        long long dist = breadth_first_search<V, E, G>(graph, src, dest);
+        auto time = timer_stop(timer);
+        
+        std::cout << "BFS distance: " << dist << " in " << time << " seconds\n";
+    }
+};
+
+int main(int argc, char** argv) {
+    CLIOptions opts = parse_cli(argc, argv);
+    dispatch_cli(opts, BFSDispatcher{});
+    return 0;
+}
+```
+
+#### Performance Benefits
+
+- **Zero Runtime Overhead:** All type resolution happens at compile time
+- **Template Specialization:** Compiler optimizes each type combination separately
+- **Memory Efficiency:** Only the required graph representation is instantiated
+- **Type Safety:** Compile-time guarantees for all graph operations
+
+#### Error Handling
+
+The CLI system provides comprehensive error checking:
+- Validates all required parameters are provided
+- Ensures mutually exclusive options aren't used together
+- Validates enum values and numeric ranges
+- Provides clear error messages with usage information
 
 ---
 
@@ -395,40 +689,6 @@ The load/save tests verify that graphs can be saved and loaded correctly across 
 
 ---
 
-### Custom Data Types
-
-Template support for storing Vertex/Edge data within the CLI structure for improved cache locality:
-
-```cpp
-struct VertexData { short count; int priority; };
-struct EdgeData { int traversals; double reliability; };
-using CustomGraph = Graph<VertexWD<VertexData>, EdgeWD<EdgeData>, GraphType::DIRECTED>;
-```
-
----
-
-### Graph Traversal
-
-```cpp
-// Traverse via indexing
-for (vertex_ID_t u = 0; u < graph.num_vertices(); ++u) {
-    for (vertex_ID_t i = 0; i < graph[v].size(); i++) {
-        // graph[v][i].dest(), graph[v][i].weight(), etc.
-    }
-}
-```
-
-```cpp
-// Traverse via iteration
-for (auto vertexRef : graph) {
-    for (const auto& edge : vertexRef) {
-        // edge.dest(), edge.weight(), etc.
-    }
-}
-```
-
----
-
 ### OpenCL GPU Acceleration
 
 The library includes GPU-accelerated algorithms using OpenCL:
@@ -450,17 +710,71 @@ long long breadth_first_search_opencl(Graph<Vertex_t, Edge_t, Graph_t>& graph,
 
 ## Testing & CI
 
-- **Automated CI:** GitHub Actions workflow builds and tests all binaries, fails on warnings, and checks exit codes.
-- **Cross-Platform Support:** Build system gracefully handles systems with and without OpenCL support.
-- **OpenCL Testing:** GPU-accelerated algorithms are tested when OpenCL is available.
-- **Load/Save Testing:** Comprehensive testing of graph I/O functionality across all combinations of graph types (directed/undirected), vertex types (weighted/unweighted), edge types (weighted/unweighted), and file formats (EL text format and CG binary format).
+EdgeLab provides comprehensive testing capabilities for both development and validation of graph algorithms and data structures.
+
+### Automated Testing
+
+- **GitHub Actions CI:** Automated workflow that builds and tests all binaries, fails on warnings, and validates exit codes
+- **Cross-Platform Support:** Build system gracefully handles systems with and without OpenCL support
+- **OpenCL Testing:** GPU-accelerated algorithms are automatically tested when OpenCL is available
+- **Load/Save Testing:** Comprehensive validation of graph I/O functionality across all combinations of:
+  - Graph types: directed/undirected
+  - Vertex types: weighted/unweighted
+  - Edge types: weighted/unweighted
+  - File formats: EL/WEL/VEL/VWEL (text) and CG (binary)
+
+### Manual Testing
+
+#### Running Tests
+
+```bash
+# Run all tests (from build directory)
+./triangle_counting_test
+./breadth_first_search_test
+./validate_graph --edge-type unweighted --scale 8 --degree 8 --gen-type erdos_renyi
+
+# Run load/save tests (cross-platform Python)
+python3 ../test/test_load_save.py
+```
+
+#### Graph Generation Testing
+
+**Scale Recommendations:**
+- **Small Graphs (Scale 3-8):** For debugging and printing graphs to console
+- **Medium Graphs (Scale 12-16):** For algorithm development and validation testing
+- **Large Graphs (Scale 18-22+):** For stress testing and benchmarking
+
+**Degree Testing:**
+- **Low Degree (2-4):** Sparse graphs for connectivity testing
+- **Medium Degree (8-16):** Balanced graphs for general algorithm testing
+- **High Degree (32-64):** Dense graphs for performance stress testing
+
+#### Validation Testing
+
+The `validate_graph` program performs comprehensive graph validation:
+
+```bash
+# Validate a generated graph
+./validate_graph --scale 10 --degree 6 --gen-type erdos_renyi
+
+# Validate a loaded graph
+./validate_graph --load-file graphs/mini.el
+```
+
+**Validation Checks:**
+- CSR format integrity (contiguous edge storage)
+- Edge validity (destinations within bounds)
+- Edge sorting (strictly increasing destinations)
+- Undirected graph symmetry (for undirected graphs)
+- Weight consistency (for weighted graphs)
+- No self-loops in undirected graphs
+- Dense packing of vertex and edge structs
 
 ---
 
 ## Current Limitations
 
-- Some graph generation algorithms (e.g., Watts-Strogatz) are planned but not yet implemented.
-- Only unweighted/weighted (not data-carrying) types are fully supported in the CLI dispatch system.
+- METIS graph loading/saving is not fully implemented yet
 - OpenCL BFS currently supports unweighted graphs only (weighted edge support planned).
 - GPU memory management is currently not flexible for all combinations of Vertex/Edge/Graph type.
 

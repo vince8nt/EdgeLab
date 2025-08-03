@@ -62,9 +62,22 @@ public:
                 std::cerr << "Unsupported file extension: " << file_type_ << std::endl;
                 exit(1);
         }
+
+        opts.graph_type = graph_type_;
+        opts.vertex_type = vertex_type_;
+        opts.edge_type = edge_type_;
     }
 
     // Load graph vertices and edges from file (after being templated by cli_dispatch)
+    // Vertex_t is (vertex_type_) potentially with data
+        // vertex_type_==VertexUW -> Vertex_t==VertexUW or VertexUWD
+        // vertex_type_==VertexW -> Vertex_t==VertexW or VertexWD
+    // Edge_t is (edge_type_) potentially with data
+        // edge_type_==EdgeUW -> Edge_t==EdgeUW or EdgeUWD
+        // edge_type_==EdgeW -> Edge_t==EdgeW or EdgeWD
+    // Graph_t is a potentially promoted (graph_type_)
+        // graph_type_==UNDIRECTED -> Graph_t==UNDIRECTED
+        // graph_type_==DIRECTED -> Graph_t==DIRECTED or BIDIRECTED or UNDIRECTED
     template<NonDataVertexType Vertex_t, NonDataEdgeType Edge_t, GraphType Graph_t>
     Graph<Vertex_t, Edge_t, Graph_t> LoadGraphBody() {
         // dispatch based on file extension
@@ -95,6 +108,9 @@ private:
     FileType file_type_;
     vertex_ID_t num_vertices_;
     edge_ID_t num_edges_;
+    GraphType graph_type_;
+    CLIVertexType vertex_type_;
+    CLIEdgeType edge_type_;
 
     // Header readers -------------------------------------------------------------------------------------------
     void load_head_EL(CLIOptions& opts) {
@@ -139,15 +155,20 @@ private:
         file_.read(reinterpret_cast<char*>(&v_weights), sizeof(bool));
         file_.read(reinterpret_cast<char*>(&e_weights), sizeof(bool));
         file_.read(reinterpret_cast<char*>(&unused), sizeof(bool));
-        opts.graph_type = directed ? GraphType::DIRECTED : GraphType::UNDIRECTED;
-        opts.vertex_type = v_weights ? CLIVertexType::WEIGHTED : CLIVertexType::UNWEIGHTED;
-        opts.edge_type = e_weights ? CLIEdgeType::WEIGHTED : CLIEdgeType::UNWEIGHTED;
+        graph_type_ = directed ? GraphType::DIRECTED : GraphType::UNDIRECTED;
+        vertex_type_ = v_weights ? CLIVertexType::WEIGHTED : CLIVertexType::UNWEIGHTED;
+        edge_type_ = e_weights ? CLIEdgeType::WEIGHTED : CLIEdgeType::UNWEIGHTED;
         file_.read(reinterpret_cast<char*>(&num_vertices_), sizeof(vertex_ID_t));
         file_.read(reinterpret_cast<char*>(&num_edges_), sizeof(edge_ID_t));
     }
 
 
     // Body readers ----------------------------------------------------------------------------------------------
+
+    // Read EL format
+    // Ignore graph_type_ (provided in file header) and use Graph_t instead
+    // Ignore vertex_type_ (provided in file header) and use Vertex_t instead
+    // Ignore edge_type_ (provided in file header) and use Edge_t instead
     template<NonDataVertexType Vertex_t, NonDataEdgeType Edge_t, GraphType Graph_t>
     Graph<Vertex_t, Edge_t, Graph_t> load_body_EL() {
         VectorGraph<Vertex_t, Edge_t> vg;
@@ -227,9 +248,54 @@ private:
 
     // Load CG format
     // most space and time efficient way to store and load graphs
+    // Ignore vertex_type_ (provided in file header) and use Vertex_t instead
+    // Ignore edge_type_ (provided in file header) and use Edge_t instead
+        // Data edges will not allow for directly reading into CSR
+    // graph_type_ (provided in file header) matters a lot
+        // special cases for conversion (all cases use O(num vertices + num edges) time):
+            // graph_type_==UNDIRECTED -> Graph_t==UNDIRECTED:
+                // O(1) extra space, O(num vertices) read calls, O(num edges) random memory access
+                    // read in vertices, and set edges_start
+                    // read in edges 1 vertex at a time
+                        // update edges_start for this vertex (by the number of read edges)
+                        // add inverse edge to each dest (and increment edges_start for that dest)
+                    // sweep vertices and reset edges_start in place
+            // graph_type_==DIRECTED -> Graph_t==DIRECTED:
+                // O(1) extra space, O(1) read calls, O(1) random memory access
+                    // simple direct loading
+            // graph_type_==DIRECTED -> Graph_t==BIDIRECTED:
+                // O(1) extra space, O(1) read calls, O(num edges) random memory access
+                    // read in vertices, and set edges_start
+                        // also set inverse_start=32bit zero (use to store inverse degrees)
+                    // read in edges
+                    // sweep edges and count inverse degrees
+                    // sweep vertices and set inverse_start in place
+                    // sweep edges, adding inverse edge and incrementing inverse_start for each
+                    // sweep vertices and reset inverse_start in place
+            // graph_type_==DIRECTED -> Graph_t==UNDIRECTED:
+                // least efficient way to load
+                // usually will add edges via symmetrization
+                // but need to account for a reduction in edges from the removal of self loops
+                // O(num vertices + num edges) extra space, O(1) read calls, O(num edges) random memory access
+                    // read in vertices, and set edges_start
+                    // allocate temp memory for directed edges (and read them into this)
+                    // allocate temp vector for undirected degree
+                    
+                        // preallocate memory for symmetrized edges (permanent memory)
+                        // allocate inverse edges_offset vector (temp memory)
+                        // allocate consensed inverse edges vector (temp memory)
+                        // read in vertices
+                            // calculate edges_start (pointing to placement in top half)
+                        // read directed edges into top half of CSRedges
+                            // (compute inverse degrees during this)
+                        // translate inverse degrees to inverse edges_offset in place
+                        // go through vertices (edges +inverse) and merge into bottom half of CSR
+                            // remove duplicates and update edges_start for each
+                    // 2. compute this on load (extra memory during loading)
+                
     template<NonDataVertexType Vertex_t, NonDataEdgeType Edge_t, GraphType Graph_t>
     Graph<Vertex_t, Edge_t, Graph_t> load_body_CG() {
-        using Vertex = typename CSR_Vertex<Vertex_t, Edge_t, Graph_t>;
+        using Vertex = CSR_Vertex<Vertex_t, Edge_t, Graph_t>;
         
         // permenant graph memory allocation
         size_t vertices_size = (num_vertices_ + 1) * sizeof(Vertex);
