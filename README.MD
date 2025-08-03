@@ -356,7 +356,7 @@ v 3 1
 0x00000005 0x00000002   0x00000001 0x00000003
 0x00000002 0x00000003 // Vertex 2 has 1 undirected edge (weight=2) to vertex 3
                       // Its edges to vertex 0 and 1 are not included since !(src < dest)
-// File size for this graph is 96 bytes
+// File size for this graph is 104 bytes
 ```
 
 ---
