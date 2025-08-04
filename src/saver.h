@@ -211,21 +211,42 @@ private:
         }
     }
 
+    // compute the number of directed edges if the graph were symmetrized (converted to undirected)
+    // takes extra time during saving, but allows for faster conversion (using less space)
+        // from directed to undirected when loading
+    edge_ID_t CG_num_symmetrized_edges(const Graph<Vertex_t, Edge_t, Graph_t>& graph) {
+        if constexpr (Graph_t == GraphType::UNDIRECTED)
+            return graph.num_edges();
+        edge_ID_t num_undirected_edges = 0;
+        for (vertex_ID_t i = 0; i < graph.num_vertices(); i++) {
+            for (const auto& edge : graph[i]) {
+                if (edge.dest() > i)
+                    num_undirected_edges++;
+                else if (edge.dest() < i and !graph[edge.dest()].has_edge_to(i))
+                    num_undirected_edges++;
+            }
+        }
+        return num_undirected_edges * 2;
+    }
+
     // Save CG format
     // most space and time efficient way to store and load graphs
     void save_CG(const Graph<Vertex_t, Edge_t, Graph_t>& graph, std::ofstream& file) {
-        bool directed = Graph_t == GraphType::DIRECTED;
+        bool undirected = Graph_t == GraphType::UNDIRECTED;
         bool weighted_vertices = WeightedVertexType<Vertex_t>;
         bool weighted_edges = WeightedEdgeType<Edge_t>;
         bool unused = false;
         vertex_ID_t num_vertices = graph.num_vertices();
         edge_ID_t num_edges = graph.num_edges();
-        file.write(reinterpret_cast<const char*>(&directed), sizeof(bool));
+        edge_ID_t num_symmetrized_edges = CG_num_symmetrized_edges(graph);
+        file.write(reinterpret_cast<const char*>(&undirected), sizeof(bool));
         file.write(reinterpret_cast<const char*>(&weighted_vertices), sizeof(bool));
         file.write(reinterpret_cast<const char*>(&weighted_edges), sizeof(bool));
         file.write(reinterpret_cast<const char*>(&unused), sizeof(bool));
         file.write(reinterpret_cast<const char*>(&num_vertices), sizeof(vertex_ID_t));
         file.write(reinterpret_cast<const char*>(&num_edges), sizeof(edge_ID_t));
+        if constexpr (Graph_t == GraphType::DIRECTED)
+            file.write(reinterpret_cast<const char*>(&num_symmetrized_edges), sizeof(edge_ID_t));
         
         // write vertices
         // TODO: do in chunks for better cache locality and to use less memory

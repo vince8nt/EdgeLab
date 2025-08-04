@@ -326,10 +326,11 @@ v 3 1
             - Includes random memory accessing (not ideal for cache performance)
             - While worse than directed graph specs, smaller file size makes up for it
     - all numerical values are unsigned integer types (for well defined bit placement)
-    - 24 byte Header formatted as: `<flags>(4b) <vertices>(4b) <edges>(8b) <undirected edges>(8b)`
-        - Flag bytes specify the booleans: `<directed> <v weighted> <e weighted> <unused>`
+    - 16/24 byte Header formatted as: `<flags>(4b) <vertices>(4b) <edges>(8b) <symmetrized edges>(8b)?`
+        - Flag bytes specify the booleans: `<undirected> <v weighted> <e weighted> <unused>`
         - The unused flag alligns the file's integers on a 4-byte boundary (for maximum performance)
-        - The `<undirected edges>` is to allow for efficient promotion from `DIRECTED` to `UNDIRECTED`
+        - `<symmetrized edges>` is only present if the graph is `DIRECTED`
+            - It allows for efficient promotion from `DIRECTED` to `UNDIRECTED`
     - Vertex info (repeated `<num vertices>` times):
         - Format: `<weight>(4 bytes)? <degree (num outgoing edges)>(4 bytes)`
     - Edges info (repeated `<num edges>` times):
@@ -341,11 +342,10 @@ v 3 1
             - CG `<num edges>` and `<degree>` values represent directed edge counts **after symmetrization**
             - Self loops are not possible for undirected graphs
 ```c
-// CG header data (24 bytes)
-0x00 0x01 0x01 0x00   // 4 x 8-bit flags for undirected graph with vertex and edge weights
+// CG header data (16 bytes)
+0x01 0x01 0x01 0x00   // 4 x 8-bit flags for undirected graph with vertex and edge weights
 0x00000004            // 32-bit vertex count for 4 vertices
 0x000000000000000C    // 64-bit edge count for 12 directed edges
-0x0000000000000006    // 64-bit edge count for 6 undirected edges
 // CG vertex data
 0x00000001 0x00000003 // Vertex ID=0, weight=1, degree=3
 0x00000006 0x00000003
@@ -356,7 +356,7 @@ v 3 1
 0x00000005 0x00000002   0x00000001 0x00000003
 0x00000002 0x00000003 // Vertex 2 has 1 undirected edge (weight=2) to vertex 3
                       // Its edges to vertex 0 and 1 are not included since !(src < dest)
-// File size for this graph is 104 bytes
+// File size for this graph is 96 bytes
 ```
 
 ---

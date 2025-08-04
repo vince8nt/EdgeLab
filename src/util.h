@@ -16,8 +16,7 @@
 
 #define DEBUG 1 // 1 for debug, 0 for release
 
-// Forward declaration
-class Loader;
+
 
 // Graph capacity specifications
 // use unsigned integer types so that bit layout is well defined (for saving/loading binary files)
@@ -120,7 +119,6 @@ struct CLIOptions {
     GenType gen_type;
     std::string load_file_path; // Path to load file, mutually exclusive
     std::string save_file_path; // Path to save file (optional)
-    std::unique_ptr<Loader> loader;
 };
 
 

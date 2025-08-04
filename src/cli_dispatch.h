@@ -2,13 +2,14 @@
 #define CLI_DISPATCH_H_
 
 #include "cli.h"
+#include "loader.h"
 
 // Generate/load and build Graph via CLI generator options
 template <typename Callable, typename V, typename E, GraphType G>
-void CLI_create_graph (const CLIOptions& opts, Callable&& func) {
+void CLI_create_graph (const CLIOptions& opts, Loader* loader, Callable&& func) {
     if (!opts.load_file_path.empty()) {
         // load graph from file
-        Graph<V, E, G> graph = opts.loader->LoadGraphBody<V, E, G>();
+        Graph<V, E, G> graph = loader->LoadGraphBody<V, E, G>();
         // template and call func with graph
         func.template operator()<V, E, G>(graph);
     } else {
@@ -41,13 +42,11 @@ void dispatch_cli(CLIOptions& opts, Callable&& func) {
 
 template <typename Callable, GraphType RequiredGraphType>
 void dispatch_cli(CLIOptions& opts, Callable&& func) {
-    // call loader to load graph header and set:
-    // - graph type
-    // - vertex type
-    // - edge type
+    // Create loader locally if needed
+    std::unique_ptr<Loader> loader;
     if (!opts.load_file_path.empty()) {
-        opts.loader = std::make_unique<Loader>();
-        opts.loader->load_graph_header(opts);
+        loader = std::make_unique<Loader>();
+        loader->load_graph_header(opts);
     }
 
     // promote graph type to required graph type
@@ -62,10 +61,10 @@ void dispatch_cli(CLIOptions& opts, Callable&& func) {
                 case CLIEdgeType::UNWEIGHTED:
                     switch (opts.graph_type) {
                         case GraphType::UNDIRECTED:
-                            CLI_create_graph<Callable, VertexUW, EdgeUW, GraphType::UNDIRECTED>(opts, std::forward<Callable>(func));
+                            CLI_create_graph<Callable, VertexUW, EdgeUW, GraphType::UNDIRECTED>(opts, loader.get(), std::forward<Callable>(func));
                             break;
                         case GraphType::DIRECTED:
-                            CLI_create_graph<Callable, VertexUW, EdgeUW, GraphType::DIRECTED>(opts, std::forward<Callable>(func));
+                            CLI_create_graph<Callable, VertexUW, EdgeUW, GraphType::DIRECTED>(opts, loader.get(), std::forward<Callable>(func));
                             break;
                         case GraphType::BIDIRECTED:
                             // CLI_create_graph<Callable, VertexUW, EdgeUW, GraphType::BIDIRECTED>(opts, std::forward<Callable>(func));
@@ -75,10 +74,10 @@ void dispatch_cli(CLIOptions& opts, Callable&& func) {
                 case CLIEdgeType::WEIGHTED:
                     switch (opts.graph_type) {
                         case GraphType::UNDIRECTED:
-                            CLI_create_graph<Callable, VertexUW, EdgeW, GraphType::UNDIRECTED>(opts, std::forward<Callable>(func));
+                            CLI_create_graph<Callable, VertexUW, EdgeW, GraphType::UNDIRECTED>(opts, loader.get(), std::forward<Callable>(func));
                             break;
                         case GraphType::DIRECTED:
-                            CLI_create_graph<Callable, VertexUW, EdgeW, GraphType::DIRECTED>(opts, std::forward<Callable>(func));
+                            CLI_create_graph<Callable, VertexUW, EdgeW, GraphType::DIRECTED>(opts, loader.get(), std::forward<Callable>(func));
                             break;
                         case GraphType::BIDIRECTED:
                             // CLI_create_graph<Callable, VertexUW, EdgeW, GraphType::BIDIRECTED>(opts, std::forward<Callable>(func));
@@ -95,10 +94,10 @@ void dispatch_cli(CLIOptions& opts, Callable&& func) {
                 case CLIEdgeType::UNWEIGHTED:
                     switch (opts.graph_type) {
                         case GraphType::UNDIRECTED:
-                            CLI_create_graph<Callable, VertexW, EdgeUW, GraphType::UNDIRECTED>(opts, std::forward<Callable>(func));
+                            CLI_create_graph<Callable, VertexW, EdgeUW, GraphType::UNDIRECTED>(opts, loader.get(), std::forward<Callable>(func));
                             break;
                         case GraphType::DIRECTED:
-                            CLI_create_graph<Callable, VertexW, EdgeUW, GraphType::DIRECTED>(opts, std::forward<Callable>(func));
+                            CLI_create_graph<Callable, VertexW, EdgeUW, GraphType::DIRECTED>(opts, loader.get(), std::forward<Callable>(func));
                             break;
                         case GraphType::BIDIRECTED:
                             // CLI_create_graph<Callable, VertexW, EdgeW, GraphType::BIDIRECTED>(opts, std::forward<Callable>(func));
@@ -108,10 +107,10 @@ void dispatch_cli(CLIOptions& opts, Callable&& func) {
                 case CLIEdgeType::WEIGHTED:
                     switch (opts.graph_type) {
                         case GraphType::UNDIRECTED:
-                            CLI_create_graph<Callable, VertexW, EdgeW, GraphType::UNDIRECTED>(opts, std::forward<Callable>(func));
+                            CLI_create_graph<Callable, VertexW, EdgeW, GraphType::UNDIRECTED>(opts, loader.get(), std::forward<Callable>(func));
                             break;
                         case GraphType::DIRECTED:
-                            CLI_create_graph<Callable, VertexW, EdgeW, GraphType::DIRECTED>(opts, std::forward<Callable>(func));
+                            CLI_create_graph<Callable, VertexW, EdgeW, GraphType::DIRECTED>(opts, loader.get(), std::forward<Callable>(func));
                             break;
                         case GraphType::BIDIRECTED:
                             // CLI_create_graph<Callable, VertexW, EdgeW, GraphType::BIDIRECTED>(opts, std::forward<Callable>(func));
