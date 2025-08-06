@@ -1,5 +1,8 @@
 #include "../src/cli_dispatch.h"
 #include "../src/saver.h"
+#include "../src/loader/edge_list_loader.h"
+#include "../src/loader/metis_graph_loader.h"
+#include "../src/loader/compacted_graph_loader.h"
 
 template<typename Vertex_t, typename Edge_t, GraphType Graph_t>
 void save_load_compare(Graph<Vertex_t, Edge_t, Graph_t> &graph, const std::string& filepath) {
@@ -8,11 +11,11 @@ void save_load_compare(Graph<Vertex_t, Edge_t, Graph_t> &graph, const std::strin
     saver.save_to_file(graph, filepath);
 
     // load the saved graph (should be the same)
-    Loader loader;
+    std::unique_ptr<LoaderBase> loader = create_loader(filepath);
     CLIOptions opts;
     opts.load_file_path = filepath;
-    loader.load_graph_header(opts);
-    Graph<Vertex_t, Edge_t, Graph_t> loaded_graph = loader.LoadGraphBody<Vertex_t, Edge_t, Graph_t>();
+    loader->load_graph_header(opts);
+    Graph<Vertex_t, Edge_t, Graph_t> loaded_graph = loader->load_graph_body<Vertex_t, Edge_t, Graph_t>();
 
     // compare the graphs to verify equality
     if (graph.num_vertices() != loaded_graph.num_vertices()) {

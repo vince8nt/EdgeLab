@@ -9,7 +9,7 @@
 #include "util.h"
 #include "graph_comp.h"
 #include "generator.h" // for GenType
-#include "loader.h"
+#include "graph_maker.h"
 
 
 

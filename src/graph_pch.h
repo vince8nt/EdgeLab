@@ -25,7 +25,7 @@
 #include "graph.h"
 #include "generator.h"
 #include "builder.h"
-#include "loader.h"
+#include "graph_maker.h"
 #include "saver.h"
 #include "cli.h"
 #include "cli_dispatch.h"

@@ -7,7 +7,7 @@
 #include "util.h"
 #include "graph_comp.h"
 #include "graph.h"
-#include "loader.h"
+#include "graph_maker.h"
 #include <cassert>
 
 template<NonDataVertexType Vertex_t, NonDataEdgeType Edge_t, GraphType Graph_t>

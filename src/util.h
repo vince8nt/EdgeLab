@@ -121,6 +121,11 @@ struct CLIOptions {
     std::string save_file_path; // Path to save file (optional)
 };
 
+struct AlgorithmReqs {
+    GraphType graph_type = GraphType::DIRECTED;
+    CLIVertexType vertex_type = CLIVertexType::UNWEIGHTED;
+    CLIEdgeType edge_type = CLIEdgeType::UNWEIGHTED;
+};
 
 // File types
 enum class FileType {
