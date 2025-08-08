@@ -235,14 +235,20 @@ private:
         bool undirected = Graph_t == GraphType::UNDIRECTED;
         bool weighted_vertices = WeightedVertexType<Vertex_t>;
         bool weighted_edges = WeightedEdgeType<Edge_t>;
-        bool unused = false;
+        bool little_endian = false;
+        if (std::endian::native == std::endian::little)
+            little_endian = true;
+        else if (std::endian::native != std::endian::big) {
+            std::cerr << "Unsupported endianness" << std::endl;
+            exit(1);
+        }
         vertex_ID_t num_vertices = graph.num_vertices();
         edge_ID_t num_edges = graph.num_edges();
         edge_ID_t num_symmetrized_edges = CG_num_symmetrized_edges(graph);
         file.write(reinterpret_cast<const char*>(&undirected), sizeof(bool));
         file.write(reinterpret_cast<const char*>(&weighted_vertices), sizeof(bool));
         file.write(reinterpret_cast<const char*>(&weighted_edges), sizeof(bool));
-        file.write(reinterpret_cast<const char*>(&unused), sizeof(bool));
+        file.write(reinterpret_cast<const char*>(&little_endian), sizeof(bool));
         file.write(reinterpret_cast<const char*>(&num_vertices), sizeof(vertex_ID_t));
         file.write(reinterpret_cast<const char*>(&num_edges), sizeof(edge_ID_t));
         if constexpr (Graph_t == GraphType::DIRECTED)
