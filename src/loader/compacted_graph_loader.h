@@ -172,20 +172,37 @@ private:
                 v_read_loc += sizeof(weight_t);
                 degree = *reinterpret_cast<vertex_ID_t*>(v_read_loc);
                 v_read_loc += sizeof(vertex_ID_t);
-                new (&vertices[i]) Vertex(weight, edges_offset);
+                if constexpr (DataVertexType<Vertex_t>) {
+                    new (&vertices[i]) Vertex(Vertex_t(weight, typename Vertex_t::data_type{}), edges_offset);
+                } else {
+                    new (&vertices[i]) Vertex(weight, edges_offset);
+                }
             }
             else {
                 degree = *reinterpret_cast<vertex_ID_t*>(v_read_loc);
                 v_read_loc += sizeof(vertex_ID_t);
-                new (&vertices[i]) Vertex(edges_offset);
+                if constexpr (DataVertexType<Vertex_t>) {
+                    new (&vertices[i]) Vertex(Vertex_t(typename Vertex_t::data_type{}), edges_offset);
+                } else {
+                    new (&vertices[i]) Vertex(edges_offset);
+                }
             }
             edges_offset += degree;
         }
         // add ending vertex
-        if constexpr (WeightedVertexType<Vertex_t>)
-            new (&vertices[num_vertices_]) Vertex(0, edges_offset);
-        else
-            new (&vertices[num_vertices_]) Vertex(edges_offset);
+        if constexpr (WeightedVertexType<Vertex_t>) {
+            if constexpr (DataVertexType<Vertex_t>) {
+                new (&vertices[num_vertices_]) Vertex(Vertex_t(0, typename Vertex_t::data_type{}), edges_offset);
+            } else {
+                new (&vertices[num_vertices_]) Vertex(0, edges_offset);
+            }
+        } else {
+            if constexpr (DataVertexType<Vertex_t>) {
+                new (&vertices[num_vertices_]) Vertex(Vertex_t(typename Vertex_t::data_type{}), edges_offset);
+            } else {
+                new (&vertices[num_vertices_]) Vertex(edges_offset);
+            }
+        }
     }
 
 };

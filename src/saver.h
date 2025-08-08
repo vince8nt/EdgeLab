@@ -10,7 +10,7 @@
 #include "graph_maker.h"
 #include <cassert>
 
-template<NonDataVertexType Vertex_t, NonDataEdgeType Edge_t, GraphType Graph_t>
+template<VertexType Vertex_t, EdgeType Edge_t, GraphType Graph_t>
 class Saver {
 public:
     Saver() = default;

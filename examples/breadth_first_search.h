@@ -1,8 +1,16 @@
-#ifndef BREADTH_FIRST_SEARCH_H
-#define BREADTH_FIRST_SEARCH_H
+#ifndef BREADTH_FIRST_SEARCH_H_
+#define BREADTH_FIRST_SEARCH_H_
 
-#include "../src/cli_dispatch.h"
+#include "graph.h"
+#include "util.h"
 #include <queue>
+
+// BFS algorithm requirements - compile-time constants
+struct BFSAlgorithmReqs {
+    static constexpr GraphType graph_type = GraphType::DIRECTED;  // BFS works on directed graphs
+    static constexpr CLIVertexType vertex_type = CLIVertexType::UNWEIGHTED;  // BFS doesn't need vertex weights
+    static constexpr CLIEdgeType edge_type = CLIEdgeType::UNWEIGHTED;  // BFS doesn't need edge weights
+};
 
 // program body for generalized VertexType, EdgeType, and GraphType
 template<typename Vertex_t, typename Edge_t, GraphType Graph_t>
@@ -55,4 +63,4 @@ long long breadth_first_search(Graph<Vertex_t, Edge_t, Graph_t> &graph, vertex_I
     return -1;
 }
 
-#endif // BREADTH_FIRST_SEARCH_H 
+#endif // BREADTH_FIRST_SEARCH_H_ 

@@ -15,22 +15,18 @@
 
 #include "loader/loader_factory_impl.h"
 #include "generator.h"
-#include "type_promoter.h"
 
 // GraphMaker is a class that makes graphs from files or generators
 // It uses CLI options to specify the file / generator used
-// It uses algorithm requirements to potentially promote graph type, vertex type, and edge type
+// Type promotion is handled by the dispatch system, not here
 class GraphMaker {
 public:
-    GraphMaker(CLIOptions& opts, AlgorithmReqs& reqs) : opts_(opts), reqs_(reqs) {
+    GraphMaker(CLIOptions& opts) : opts_(opts) {
         // Set opts_.graph_type, opts_.vertex_type, opts_.edge_type based on file header
         if (!opts_.load_file_path.empty()) {
             loader_ = create_loader(opts_.load_file_path);
             loader_->load_graph_header(opts_);
         }
-
-        // Promote types based on algorithm requirements
-        opts_ = TypePromoter::promote_types(opts_, reqs_);
     }
 
     template<VertexType Vertex_t, EdgeType Edge_t, GraphType Graph_t>
@@ -48,7 +44,6 @@ public:
 
 private:
     CLIOptions &opts_;
-    AlgorithmReqs &reqs_;
     std::unique_ptr<LoaderBase> loader_;
 };
 

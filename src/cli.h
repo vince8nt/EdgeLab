@@ -12,7 +12,6 @@
 #include "graph_maker.h"
 
 
-
 inline std::string to_lower(const std::string& s) {
     std::string out = s;
     std::transform(out.begin(), out.end(), out.begin(), [](unsigned char c){ return std::tolower(c); });
@@ -24,55 +23,53 @@ inline void print_usage(const char* prog_name) {
     std::cout << "\nOptions:\n";
     std::cout << "  --load-file <path>                      (mutually exclusive with all other options)\n";
     std::cout << "  --save-file <path>                      (optional, save graph to file)\n";
-    std::cout << "  --graph-type <directed|undirected>      (default: undirected)\n";
-    std::cout << "  --vertex-type <unweighted|weighted|unweighted_data|weighted_data>  (default: unweighted)\n";
-    std::cout << "  --edge-type <unweighted|weighted|unweighted_data|weighted_data>    (default: unweighted)\n";
-    std::cout << "  --scale <int>                          (required)\n";
-    std::cout << "  --degree <int>                         (required)\n";
-    std::cout << "  --gen-type <erdos_renyi|watts_strogatz|barabasi_albert> (required)\n";
+    std::cout << "  --graph-type <d|u>                      (default: d)\n";
+    std::cout << "      d = directed, u = undirected\n";
+    std::cout << "  --vertex-type <w|uw>                    (default: w)\n";
+    std::cout << "  --edge-type <w|uw>                      (default: w)\n";
+    std::cout << "      w = weighted, uw = unweighted\n";
+    std::cout << "  --scale <int>                           (required for generation)\n";
+    std::cout << "  --degree <int>                          (required for generation)\n";
+    std::cout << "  --gen-type <er|ws|ba>                   (required for generation)\n";
+    std::cout << "      er = erdos_renyi, ws = watts_strogatz, ba = barabasi_albert\n";
     std::cout << std::endl;
 }
 
 inline bool parse_enum(const std::string& value, GraphType& out) {
     std::string v = to_lower(value);
-    if (v == "undirected") { out = GraphType::UNDIRECTED; return true; }
-    if (v == "directed")   { out = GraphType::DIRECTED;   return true; }
-    return false;
-}
-inline bool parse_enum(const std::string& value, CLIVertexType& out) {
-    std::string v = to_lower(value);
-    if (v == "unweighted")        { out = CLIVertexType::UNWEIGHTED;        return true; }
-    if (v == "weighted")          { out = CLIVertexType::WEIGHTED;          return true; }
-    if (v == "unweighted_data")   { out = CLIVertexType::UNWEIGHTED_DATA;   return true; }
-    if (v == "weighted_data")     { out = CLIVertexType::WEIGHTED_DATA;     return true; }
-    return false;
-}
-inline bool parse_enum(const std::string& value, CLIEdgeType& out) {
-    std::string v = to_lower(value);
-    if (v == "unweighted")        { out = CLIEdgeType::UNWEIGHTED;        return true; }
-    if (v == "weighted")          { out = CLIEdgeType::WEIGHTED;          return true; }
-    if (v == "unweighted_data")   { out = CLIEdgeType::UNWEIGHTED_DATA;   return true; }
-    if (v == "weighted_data")     { out = CLIEdgeType::WEIGHTED_DATA;     return true; }
-    return false;
-}
-inline bool parse_enum(const std::string& value, GenType& out) {
-    std::string v = to_lower(value);
-    if (v == "erdos_renyi")       { out = GenType::ERDOS_RENYI;       return true; }
-    if (v == "watts_strogatz")    { out = GenType::WATTS_STROGATZ;    return true; }
-    if (v == "barabasi_albert")   { out = GenType::BARABASI_ALBERT;   return true; }
+    if (v == "u") { out = GraphType::UNDIRECTED; return true; }
+    if (v == "d")   { out = GraphType::DIRECTED;   return true; }
     return false;
 }
 
-// Map CLI enums to internal enums
-// enum class GraphType { UNDIRECTED, DIRECTED };
-// enum class GenType { ERDOS_RENYI, WATTS_STROGATZ, BARABASI_ALBERT };
+inline bool parse_enum(const std::string& value, CLIVertexType& out) {
+    std::string v = to_lower(value);
+    if (v == "uw")        { out = CLIVertexType::UNWEIGHTED;        return true; }
+    if (v == "w")          { out = CLIVertexType::WEIGHTED;          return true; }
+    return false;
+}
+
+inline bool parse_enum(const std::string& value, CLIEdgeType& out) {
+    std::string v = to_lower(value);
+    if (v == "uw")        { out = CLIEdgeType::UNWEIGHTED;        return true; }
+    if (v == "w")          { out = CLIEdgeType::WEIGHTED;          return true; }
+    return false;
+}
+
+inline bool parse_enum(const std::string& value, GenType& out) {
+    std::string v = to_lower(value);
+    if (v == "er")       { out = GenType::ERDOS_RENYI;       return true; }
+    if (v == "ws")    { out = GenType::WATTS_STROGATZ;    return true; }
+    if (v == "ba")   { out = GenType::BARABASI_ALBERT;   return true; }
+    return false;
+}
 
 // Parse CLI arguments and return CLIOptions. Prints usage and exits on error.
 inline CLIOptions parse_cli(int argc, char** argv) {
     CLIOptions opts{};
     bool got_scale = false, got_degree = false, got_gen_type = false;
     bool got_load_file = false;
-    // int load_file_arg_index = -1;
+    
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
         if (arg == "--load-file" && i+1 < argc) {
@@ -83,26 +80,32 @@ inline CLIOptions parse_cli(int argc, char** argv) {
             }
             opts.load_file_path = argv[++i];
             got_load_file = true;
-            // load_file_arg_index = i - 1;
         }
     }
+    
     if (got_load_file) {
-        // Only --load-file, --save-file, and program name are allowed
-        if (argc > 5) {
+        // Only --load-file, --save-file, --graph-type, and program name are allowed
+        if (argc > 6) {
             std::cerr << "--load-file is mutually exclusive with generation options." << std::endl;
             print_usage(argv[0]);
             exit(1);
         }
-        // Check for --save-file option
+        // Check for --save-file and --graph-type options
         for (int i = 1; i < argc; ++i) {
             std::string arg = argv[i];
             if (arg == "--save-file" && i+1 < argc) {
                 opts.save_file_path = argv[++i];
-                break;
+            } else if (arg == "--graph-type" && i+1 < argc) {
+                if (!parse_enum(argv[++i], opts.graph_type)) {
+                    std::cerr << "Invalid graph type: " << argv[i] << std::endl;
+                    print_usage(argv[0]);
+                    exit(1);
+                }
             }
         }
         return opts;
     }
+    
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
         if (arg == "--graph-type" && i+1 < argc) {
@@ -144,6 +147,7 @@ inline CLIOptions parse_cli(int argc, char** argv) {
             exit(1);
         }
     }
+    
     if (!(got_scale && got_degree && got_gen_type)) {
         std::cerr << "Missing required options." << std::endl;
         print_usage(argv[0]);

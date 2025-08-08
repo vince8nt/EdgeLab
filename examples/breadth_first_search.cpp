@@ -1,5 +1,6 @@
 #include "breadth_first_search.h"
-
+#include "../src/cli_dispatch.h"
+#include "../src/cli.h"
 
 // Functor for dispatching templated function via CLI options
 struct Dispatcher {
@@ -16,6 +17,6 @@ struct Dispatcher {
 
 int main(int argc, char** argv) {
     CLIOptions opts = parse_cli(argc, argv);
-    dispatch_cli(opts, Dispatcher{});
+    dispatch_cli<BFSAlgorithmReqs>(opts, Dispatcher{});
     return 0;
 }

@@ -101,9 +101,17 @@ public:
                         continue;
                     if (u > v)
                         std::swap(u, v);
-                    matrix[u].push_back({v, w});
+                    if constexpr (DataEdgeType<Edge_t>) {
+                        matrix[u].push_back(Edge_t(v, w, typename Edge_t::data_type{}));
+                    } else {
+                        matrix[u].push_back({v, w});
+                    }
                 } else {
-                    matrix[u].push_back({v, w});
+                    if constexpr (DataEdgeType<Edge_t>) {
+                        matrix[u].push_back(Edge_t(v, w, typename Edge_t::data_type{}));
+                    } else {
+                        matrix[u].push_back({v, w});
+                    }
                 }
             } else {
                 if (!(iss >> v)) {
@@ -121,9 +129,17 @@ public:
                         continue;
                     if (u > v)
                         std::swap(u, v);
-                    matrix[u].push_back({v});
+                    if constexpr (DataEdgeType<Edge_t>) {
+                        matrix[u].push_back(Edge_t(v, typename Edge_t::data_type{}));
+                    } else {
+                        matrix[u].push_back({v});
+                    }
                 } else {
-                    matrix[u].push_back({v});
+                    if constexpr (DataEdgeType<Edge_t>) {
+                        matrix[u].push_back(Edge_t(v, typename Edge_t::data_type{}));
+                    } else {
+                        matrix[u].push_back({v});
+                    }
                 }
             }
         }

@@ -111,9 +111,9 @@ enum class CLIEdgeType {
 };
 
 struct CLIOptions {
-    GraphType graph_type = GraphType::UNDIRECTED;
-    CLIVertexType vertex_type = CLIVertexType::UNWEIGHTED;
-    CLIEdgeType edge_type = CLIEdgeType::UNWEIGHTED;
+    GraphType graph_type = GraphType::DIRECTED;
+    CLIVertexType vertex_type = CLIVertexType::WEIGHTED;
+    CLIEdgeType edge_type = CLIEdgeType::WEIGHTED;
     int scale;
     int degree;
     GenType gen_type;
@@ -121,10 +121,15 @@ struct CLIOptions {
     std::string save_file_path; // Path to save file (optional)
 };
 
+// AlgorithmReqs is now a compile-time constant struct that algorithms define
+// This should be defined in each algorithm's header file
 struct AlgorithmReqs {
-    GraphType graph_type = GraphType::DIRECTED;
-    CLIVertexType vertex_type = CLIVertexType::UNWEIGHTED;
-    CLIEdgeType edge_type = CLIEdgeType::UNWEIGHTED;
+    static constexpr GraphType graph_type = GraphType::DIRECTED;
+    static constexpr CLIVertexType vertex_type = CLIVertexType::UNWEIGHTED;
+    static constexpr CLIEdgeType edge_type = CLIEdgeType::UNWEIGHTED;
+    
+    // Data types are template parameters, not runtime values
+    // Algorithms will specify these in their template parameters
 };
 
 // File types
