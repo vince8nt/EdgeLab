@@ -7,7 +7,7 @@ This directory contains the benchmarking infrastructure for EdgeLab, designed to
 The benchmarking system consists of two main components:
 
 1. **Algorithm Benchmarks** - Python script for testing graph algorithms
-2. **Micro Benchmarks** - Shell script and C++ programs for testing specific operations
+2. **Micro Benchmarks** - Python script and C++ programs for testing specific operations
 
 ## Algorithm Benchmarks
 
@@ -55,12 +55,24 @@ Results are saved to `algorithm_benchmark_results.json` with detailed timing inf
 ### Usage
 
 ```bash
-# Run all micro benchmarks
-./run_micro_benchmarks.sh
+# Run with default settings
+python3 run_micro_benchmarks.py
 
-# Make executable first (if needed)
-chmod +x run_micro_benchmarks.sh
+# Run with custom parameters
+python3 run_micro_benchmarks.py --build-dir ../build --results-dir my_results --num-runs 10
+
+# Available options:
+# --build-dir: Path to build directory (default: ../build)
+# --results-dir: Directory to save results (default: micro_benchmark_results)
+# --num-runs: Number of runs per benchmark (default: 5)
 ```
+
+The Python script offers several advantages:
+- Cross-platform compatibility (Windows, Linux, macOS)
+- Better error handling and reporting
+- Command-line argument parsing
+- More detailed progress reporting
+- Easier to extend and modify
 
 ### What it tests
 
