@@ -7,7 +7,7 @@
 #include "builder.h"
 
 
-template<NonDataVertexType Vertex_t, NonDataEdgeType Edge_t, GraphType Graph_t>
+template<VertexType Vertex_t, EdgeType Edge_t, GraphType Graph_t>
 class Generator {
 public:
     Generator(GenType gen_type, int scale, int degree) :
@@ -76,23 +76,48 @@ private:
             if constexpr (WeightedEdgeType<Edge_t>) {
                 weight_t weight = weight_dist(gen);
                 if constexpr (Graph_t == GraphType::UNDIRECTED) {
-                    if (src <= dest)
+                    if (src <= dest) {
+                        if constexpr (DataEdgeType<Edge_t>) {
+                            matrix[src].push_back(Edge_t(dest, weight, typename Edge_t::data_type{}));
+                        } else {
+                            matrix[src].push_back({dest, weight});
+                        }
+                    } else {
+                        if constexpr (DataEdgeType<Edge_t>) {
+                            matrix[dest].push_back(Edge_t(src, weight, typename Edge_t::data_type{}));
+                        } else {
+                            matrix[dest].push_back({src, weight});
+                        }
+                    }
+                } else {
+                    if constexpr (DataEdgeType<Edge_t>) {
+                        matrix[src].push_back(Edge_t(dest, weight, typename Edge_t::data_type{}));
+                    } else {
                         matrix[src].push_back({dest, weight});
-                    else
-                        matrix[dest].push_back({src, weight});
+                    }
                 }
-                else
-                    matrix[src].push_back({dest, weight});
-            }
-            else {
+            } else {
                 if constexpr (Graph_t == GraphType::UNDIRECTED) {
-                    if (src <= dest)
+                    if (src <= dest) {
+                        if constexpr (DataEdgeType<Edge_t>) {
+                            matrix[src].push_back(Edge_t(dest, typename Edge_t::data_type{}));
+                        } else {
+                            matrix[src].push_back({dest});
+                        }
+                    } else {
+                        if constexpr (DataEdgeType<Edge_t>) {
+                            matrix[dest].push_back(Edge_t(src, typename Edge_t::data_type{}));
+                        } else {
+                            matrix[dest].push_back({src});
+                        }
+                    }
+                } else {
+                    if constexpr (DataEdgeType<Edge_t>) {
+                        matrix[src].push_back(Edge_t(dest, typename Edge_t::data_type{}));
+                    } else {
                         matrix[src].push_back({dest});
-                    else
-                        matrix[dest].push_back({src});
+                    }
                 }
-                else
-                    matrix[src].push_back({dest});
             }
         }
 
@@ -124,18 +149,34 @@ private:
                     if (v < u) {
                         if constexpr (WeightedEdgeType<Edge_t>) {
                             weight_t weight = weight_dist(gen);
-                            matrix[v].push_back({u, weight});
+                            if constexpr (DataEdgeType<Edge_t>) {
+                                matrix[v].push_back(Edge_t(u, weight, typename Edge_t::data_type{}));
+                            } else {
+                                matrix[v].push_back({u, weight});
+                            }
                         } else {
-                            matrix[v].push_back({u});
+                            if constexpr (DataEdgeType<Edge_t>) {
+                                matrix[v].push_back(Edge_t(u, typename Edge_t::data_type{}));
+                            } else {
+                                matrix[v].push_back({u});
+                            }
                         }
                     }
                 } else {
                     // For directed graphs, add all edges
                     if constexpr (WeightedEdgeType<Edge_t>) {
                         weight_t weight = weight_dist(gen);
-                        matrix[v].push_back({u, weight});
+                        if constexpr (DataEdgeType<Edge_t>) {
+                            matrix[v].push_back(Edge_t(u, weight, typename Edge_t::data_type{}));
+                        } else {
+                            matrix[v].push_back({u, weight});
+                        }
                     } else {
-                        matrix[v].push_back({u});
+                        if constexpr (DataEdgeType<Edge_t>) {
+                            matrix[v].push_back(Edge_t(u, typename Edge_t::data_type{}));
+                        } else {
+                            matrix[v].push_back({u});
+                        }
                     }
                 }
             }
@@ -188,9 +229,17 @@ private:
                             if (v < new_dest) {
                                 if constexpr (WeightedEdgeType<Edge_t>) {
                                     weight_t weight = weight_dist(gen);
-                                    edge = Edge_t(new_dest, weight);
+                                    if constexpr (DataEdgeType<Edge_t>) {
+                                        edge = Edge_t(new_dest, weight, typename Edge_t::data_type{});
+                                    } else {
+                                        edge = Edge_t(new_dest, weight);
+                                    }
                                 } else {
-                                    edge = Edge_t(new_dest);
+                                    if constexpr (DataEdgeType<Edge_t>) {
+                                        edge = Edge_t(new_dest, typename Edge_t::data_type{});
+                                    } else {
+                                        edge = Edge_t(new_dest);
+                                    }
                                 }
                             }
                             // If v >= new_dest, skip the rewiring to maintain the dest > src constraint
@@ -198,9 +247,17 @@ private:
                             // For directed graphs, just update the edge
                             if constexpr (WeightedEdgeType<Edge_t>) {
                                 weight_t weight = weight_dist(gen);
-                                edge = Edge_t(new_dest, weight);
+                                if constexpr (DataEdgeType<Edge_t>) {
+                                    edge = Edge_t(new_dest, weight, typename Edge_t::data_type{});
+                                } else {
+                                    edge = Edge_t(new_dest, weight);
+                                }
                             } else {
-                                edge = Edge_t(new_dest);
+                                if constexpr (DataEdgeType<Edge_t>) {
+                                    edge = Edge_t(new_dest, typename Edge_t::data_type{});
+                                } else {
+                                    edge = Edge_t(new_dest);
+                                }
                             }
                         }
                     }
@@ -229,9 +286,17 @@ private:
             for (vertex_ID_t u = v + 1; u < m0; u++) {
                 if constexpr (WeightedEdgeType<Edge_t>) {
                     weight_t weight = weight_dist(gen);
-                    matrix[v].push_back({u, weight});
+                    if constexpr (DataEdgeType<Edge_t>) {
+                        matrix[v].push_back(Edge_t(u, weight, typename Edge_t::data_type{}));
+                    } else {
+                        matrix[v].push_back({u, weight});
+                    }
                 } else {
-                    matrix[v].push_back({u});
+                    if constexpr (DataEdgeType<Edge_t>) {
+                        matrix[v].push_back(Edge_t(u, typename Edge_t::data_type{}));
+                    } else {
+                        matrix[v].push_back({u});
+                    }
                 }
             }
         }
@@ -274,26 +339,50 @@ private:
                         if (new_vertex < selected_vertex) {
                             if constexpr (WeightedEdgeType<Edge_t>) {
                                 weight_t weight = weight_dist(gen);
-                                matrix[new_vertex].push_back({selected_vertex, weight});
+                                if constexpr (DataEdgeType<Edge_t>) {
+                                    matrix[new_vertex].push_back(Edge_t(selected_vertex, weight, typename Edge_t::data_type{}));
+                                } else {
+                                    matrix[new_vertex].push_back({selected_vertex, weight});
+                                }
                             } else {
-                                matrix[new_vertex].push_back({selected_vertex});
+                                if constexpr (DataEdgeType<Edge_t>) {
+                                    matrix[new_vertex].push_back(Edge_t(selected_vertex, typename Edge_t::data_type{}));
+                                } else {
+                                    matrix[new_vertex].push_back({selected_vertex});
+                                }
                             }
                         } else {
                             // If new_vertex >= selected_vertex, add the edge to the selected_vertex instead
                             if constexpr (WeightedEdgeType<Edge_t>) {
                                 weight_t weight = weight_dist(gen);
-                                matrix[selected_vertex].push_back({new_vertex, weight});
+                                if constexpr (DataEdgeType<Edge_t>) {
+                                    matrix[selected_vertex].push_back(Edge_t(new_vertex, weight, typename Edge_t::data_type{}));
+                                } else {
+                                    matrix[selected_vertex].push_back({new_vertex, weight});
+                                }
                             } else {
-                                matrix[selected_vertex].push_back({new_vertex});
+                                if constexpr (DataEdgeType<Edge_t>) {
+                                    matrix[selected_vertex].push_back(Edge_t(new_vertex, typename Edge_t::data_type{}));
+                                } else {
+                                    matrix[selected_vertex].push_back({new_vertex});
+                                }
                             }
                         }
                     } else {
                         // For directed graphs, add edge from new_vertex to selected_vertex
                         if constexpr (WeightedEdgeType<Edge_t>) {
                             weight_t weight = weight_dist(gen);
-                            matrix[new_vertex].push_back({selected_vertex, weight});
+                            if constexpr (DataEdgeType<Edge_t>) {
+                                matrix[new_vertex].push_back(Edge_t(selected_vertex, weight, typename Edge_t::data_type{}));
+                            } else {
+                                matrix[new_vertex].push_back({selected_vertex, weight});
+                            }
                         } else {
-                            matrix[new_vertex].push_back({selected_vertex});
+                            if constexpr (DataEdgeType<Edge_t>) {
+                                matrix[new_vertex].push_back(Edge_t(selected_vertex, typename Edge_t::data_type{}));
+                            } else {
+                                matrix[new_vertex].push_back({selected_vertex});
+                            }
                         }
                     }
                     

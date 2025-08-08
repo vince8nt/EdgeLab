@@ -16,8 +16,7 @@
 
 #define DEBUG 1 // 1 for debug, 0 for release
 
-// Forward declaration
-class Loader;
+
 
 // Graph capacity specifications
 // use unsigned integer types so that bit layout is well defined (for saving/loading binary files)
@@ -112,17 +111,28 @@ enum class CLIEdgeType {
 };
 
 struct CLIOptions {
-    GraphType graph_type = GraphType::UNDIRECTED;
-    CLIVertexType vertex_type = CLIVertexType::UNWEIGHTED;
-    CLIEdgeType edge_type = CLIEdgeType::UNWEIGHTED;
+    GraphType graph_type = GraphType::DIRECTED;
+    CLIVertexType vertex_type = CLIVertexType::WEIGHTED;
+    CLIEdgeType edge_type = CLIEdgeType::WEIGHTED;
     int scale;
     int degree;
     GenType gen_type;
     std::string load_file_path; // Path to load file, mutually exclusive
     std::string save_file_path; // Path to save file (optional)
-    std::unique_ptr<Loader> loader;
+    bool auto_uw_promotion = true; // Automatically promote weighted to unweighted
+                                   // in the case weight is not needed
 };
 
+// AlgorithmReqs is now a compile-time constant struct that algorithms define
+// This should be defined in each algorithm's header file
+struct AlgorithmReqs {
+    static constexpr GraphType graph_type = GraphType::DIRECTED;
+    static constexpr CLIVertexType vertex_type = CLIVertexType::UNWEIGHTED;
+    static constexpr CLIEdgeType edge_type = CLIEdgeType::UNWEIGHTED;
+    
+    // Data types are template parameters, not runtime values
+    // Algorithms will specify these in their template parameters
+};
 
 // File types
 enum class FileType {

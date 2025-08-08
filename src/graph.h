@@ -4,6 +4,7 @@
 #include "util.h"
 #include "graph_comp.h"
 #include <span>
+#include <algorithm>
 
 // Forward declaration for Vertex specialization
 template<typename Vertex_t, typename Edge_t, GraphType Graph_t>
@@ -78,14 +79,11 @@ public:
 
         // Edge lookup support
         bool has_edge_to(vertex_ID_t target_id) const {
-            return std::binary_search(begin(), end(), target_id,
-            [](const Edge_t& edge, vertex_ID_t target) {
-                return edge.dest() < target;
-            });
+            return get_edge_to(target_id) != end();
         }
         Edge_t* get_edge_to(vertex_ID_t target_id) const {
             auto it = std::lower_bound(begin(), end(), target_id,
-                [](const Edge_t& edge, vertex_ID_t target) {
+                [](const Edge_t& edge, vertex_ID_t target) -> bool {
                     return edge.dest() < target;
                 });
             if (it != end() and it->dest() == target_id)
@@ -114,15 +112,12 @@ public:
         // Incoming Edge lookup support (only for BIDIRECTED and UNDIRECTED graphs)
         bool has_edge_from(vertex_ID_t source_id) const
                 requires (Graph_t == GraphType::BIDIRECTED or Graph_t == GraphType::UNDIRECTED) {
-            return std::binary_search(in().begin(), in().end(), source_id,
-            [](const Edge_t& edge, vertex_ID_t source) {
-                return edge.dest() < source;
-            });
+            return get_edge_from(source_id) != in().end();
         }
         Edge_t* get_edge_from(vertex_ID_t source_id) const
                 requires (Graph_t == GraphType::BIDIRECTED or Graph_t == GraphType::UNDIRECTED) {
             auto it = std::lower_bound(in().begin(), in().end(), source_id,
-                [](const Edge_t& edge, vertex_ID_t source) {
+                [](const Edge_t& edge, vertex_ID_t source) -> bool {
                     return edge.dest() < source;
                 });
             if (it != in().end() and it->dest() == source_id)

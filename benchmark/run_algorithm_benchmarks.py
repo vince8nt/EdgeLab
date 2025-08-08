@@ -39,11 +39,11 @@ DEFAULT_TEST_CONFIGS = [
     
     # Generated graphs - (scale, degree, genType, EdgeType, VertexType, GraphType)
     # These will be generated in memory and run directly
-    (8, 4, "erdos_renyi", "unweighted", "unweighted", "directed"),
-    (12, 4, "erdos_renyi", "unweighted", "unweighted", "directed"),
-    (16, 4, "erdos_renyi", "unweighted", "unweighted", "directed"),
-    (18, 4, "erdos_renyi", "unweighted", "unweighted", "directed"),
-    (20, 4, "erdos_renyi", "unweighted", "unweighted", "directed"),
+    (8, 4, "er", "uw", "uw", "d"),
+    (12, 4, "er", "uw", "uw", "d"),
+    (16, 4, "er", "uw", "uw", "d"),
+    (18, 4, "er", "uw", "uw", "d"),
+    (20, 4, "er", "uw", "uw", "d"),
 ]
 
 # Placeholder for user-provided graph files

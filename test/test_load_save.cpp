@@ -1,5 +1,6 @@
 #include "../src/cli_dispatch.h"
 #include "../src/saver.h"
+#include "../src/loader/loader_factory_impl.h"
 
 template<typename Vertex_t, typename Edge_t, GraphType Graph_t>
 void save_load_compare(Graph<Vertex_t, Edge_t, Graph_t> &graph, const std::string& filepath) {
@@ -8,11 +9,11 @@ void save_load_compare(Graph<Vertex_t, Edge_t, Graph_t> &graph, const std::strin
     saver.save_to_file(graph, filepath);
 
     // load the saved graph (should be the same)
-    Loader loader;
+    std::unique_ptr<LoaderBase> loader = create_loader(filepath);
     CLIOptions opts;
     opts.load_file_path = filepath;
-    loader.load_graph_header(opts);
-    Graph<Vertex_t, Edge_t, Graph_t> loaded_graph = loader.LoadGraphBody<Vertex_t, Edge_t, Graph_t>();
+    loader->load_graph_header(opts);
+    Graph<Vertex_t, Edge_t, Graph_t> loaded_graph = loader->load_graph_body<Vertex_t, Edge_t, Graph_t>();
 
     // compare the graphs to verify equality
     if (graph.num_vertices() != loaded_graph.num_vertices()) {
@@ -79,6 +80,7 @@ int main(int argc, char** argv) {
         std::cerr << "Error: No output file path provided" << std::endl;
         exit(1);
     }
+    opts.auto_uw_promotion = false;
     dispatch_cli(opts, Dispatcher{opts.save_file_path});
     return 0;
 }

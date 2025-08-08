@@ -326,10 +326,11 @@ v 3 1
             - Includes random memory accessing (not ideal for cache performance)
             - While worse than directed graph specs, smaller file size makes up for it
     - all numerical values are unsigned integer types (for well defined bit placement)
-    - 24 byte Header formatted as: `<flags>(4b) <vertices>(4b) <edges>(8b) <undirected edges>(8b)`
-        - Flag bytes specify the booleans: `<directed> <v weighted> <e weighted> <unused>`
+    - 16/24 byte Header formatted as: `<flags>(4b) <vertices>(4b) <edges>(8b) <symmetrized edges>(8b)?`
+        - Flag bytes specify the booleans: `<undirected> <v weighted> <e weighted> <unused>`
         - The unused flag alligns the file's integers on a 4-byte boundary (for maximum performance)
-        - The `<undirected edges>` is to allow for efficient promotion from `DIRECTED` to `UNDIRECTED`
+        - `<symmetrized edges>` is only present if the graph is `DIRECTED`
+            - It allows for efficient promotion from `DIRECTED` to `UNDIRECTED`
     - Vertex info (repeated `<num vertices>` times):
         - Format: `<weight>(4 bytes)? <degree (num outgoing edges)>(4 bytes)`
     - Edges info (repeated `<num edges>` times):
@@ -341,11 +342,10 @@ v 3 1
             - CG `<num edges>` and `<degree>` values represent directed edge counts **after symmetrization**
             - Self loops are not possible for undirected graphs
 ```c
-// CG header data (24 bytes)
-0x00 0x01 0x01 0x00   // 4 x 8-bit flags for undirected graph with vertex and edge weights
+// CG header data (16 bytes)
+0x01 0x01 0x01 0x00   // 4 x 8-bit flags for undirected graph with vertex and edge weights
 0x00000004            // 32-bit vertex count for 4 vertices
 0x000000000000000C    // 64-bit edge count for 12 directed edges
-0x0000000000000006    // 64-bit edge count for 6 undirected edges
 // CG vertex data
 0x00000001 0x00000003 // Vertex ID=0, weight=1, degree=3
 0x00000006 0x00000003
@@ -356,7 +356,7 @@ v 3 1
 0x00000005 0x00000002   0x00000001 0x00000003
 0x00000002 0x00000003 // Vertex 2 has 1 undirected edge (weight=2) to vertex 3
                       // Its edges to vertex 0 and 1 are not included since !(src < dest)
-// File size for this graph is 104 bytes
+// File size for this graph is 96 bytes
 ```
 
 ---
@@ -379,7 +379,7 @@ All generators use two key parameters:
 ### Available Generators
 
 #### 1. Erdos-Renyi (Random Graph)
-**CLI Option:** `--gen-type erdos_renyi`
+**CLI Option:** `--gen-type er`
 
 Generates random graphs where each possible edge exists with equal probability.
 
@@ -394,12 +394,12 @@ Generates random graphs where each possible edge exists with equal probability.
 
 **Example:**
 ```bash
-./validate_graph --graph-type undirected --vertex-type unweighted --edge-type weighted \
-    --scale 16 --degree 8 --gen-type erdos_renyi
+./validate_graph --graph-type u --vertex-type uw --edge-type w \
+    --scale 16 --degree 8 --gen-type er
 ```
 
 #### 2. Watts-Strogatz (Small-World Network)
-**CLI Option:** `--gen-type watts_strogatz`
+**CLI Option:** `--gen-type ws`
 
 Generates small-world networks that exhibit high clustering and short average path lengths.
 
@@ -417,12 +417,12 @@ Generates small-world networks that exhibit high clustering and short average pa
 
 **Example:**
 ```bash
-./validate_graph --graph-type undirected --vertex-type weighted --edge-type unweighted \
-    --scale 14 --degree 6 --gen-type watts_strogatz
+./validate_graph --graph-type u --vertex-type w --edge-type uw \
+    --scale 14 --degree 6 --gen-type ws
 ```
 
 #### 3. Barabasi-Albert (Scale-Free Network)
-**CLI Option:** `--gen-type barabasi_albert`
+**CLI Option:** `--gen-type ba`
 
 Generates scale-free networks with power-law degree distribution, modeling preferential attachment.
 
@@ -442,8 +442,8 @@ Generates scale-free networks with power-law degree distribution, modeling prefe
 
 **Example:**
 ```bash
-./validate_graph --graph-type directed --vertex-type unweighted --edge-type weighted \
-    --scale 18 --degree 4 --gen-type barabasi_albert
+./validate_graph --graph-type d --vertex-type uw --edge-type w \
+    --scale 18 --degree 4 --gen-type ba
 ```
 
 ### Weight Generation
@@ -475,12 +475,12 @@ The CLI system (`src/cli.h`) provides a unified interface for both graph generat
 
 **Graph Generation Mode:**
 ```bash
---graph-type <directed|undirected>     # Graph direction (default: undirected)
---vertex-type <unweighted|weighted>    # Vertex weight configuration (default: unweighted)
---edge-type <unweighted|weighted>      # Edge weight configuration (default: unweighted)
+--graph-type <d|u>                     # Graph direction (default: d)
+--vertex-type <w|uw>                   # Vertex weight configuration (default: w)
+--edge-type <w|uw>                     # Edge weight configuration (default: w)
 --scale <int>                          # Graph size as 2^scale (required)
 --degree <int>                         # Average edges per vertex (required)
---gen-type <erdos_renyi|watts_strogatz|barabasi_albert>  # Generator type (required)
+--gen-type <er|ws|ba>                  # Generator type (required)
 --save-file <path>                     # Optional: save generated graph to file (if supported by the executable)
 ```
 
@@ -488,23 +488,32 @@ The CLI system (`src/cli.h`) provides a unified interface for both graph generat
 ```bash
 --load-file <path>                     # Load graph from file (mutually exclusive with generation)
 --save-file <path>                     # Optional: save graph to file (if supported by the executable)
+--graph-type <d|u>                     # Optional: override graph direction when loading
 ```
+
+**Option Details:**
+- `--graph-type`: `d` = directed, `u` = undirected
+- `--vertex-type`: `w` = weighted, `uw` = unweighted
+- `--edge-type`: `w` = weighted, `uw` = unweighted
+- `--gen-type`: `er` = erdos_renyi, `ws` = watts_strogatz, `ba` = barabasi_albert
+
+**Note:** Vertex and edge types may be promoted/demoted based on algorithm requirements. Unweighted types use less memory but still provide weight()=1.0 for algorithms.
 
 #### CLI Usage Examples
 
 ```bash
 # Generate a small undirected graph for testing
-./validate_graph --scale 8 --degree 4 --gen-type erdos_renyi
+./validate_graph --scale 8 --degree 4 --gen-type er
 
 # Generate a large directed weighted graph
-./bfs --graph-type directed --vertex-type weighted --edge-type weighted \
-    --scale 16 --degree 8 --gen-type barabasi_albert
+./bfs --graph-type d --vertex-type w --edge-type w \
+    --scale 16 --degree 8 --gen-type ba
 
 # Load graph from file and save in different format
 ./converter --load-file input.el --save-file graphs/output.cg
 
 # Generate graph and save to file
-./converter --scale 12 --degree 6 --gen-type watts_strogatz --save-file ws_12_16.cg
+./converter --scale 12 --degree 6 --gen-type ws --save-file ws_12_16.cg
 ```
 
 ### Type Dispatch System
@@ -661,7 +670,7 @@ cd build
 cmake ..
 cmake --build .
 # generate graph and run algorithm
-./validate_graph --graph-type undirected --vertex-type unweighted --edge-type unweighted --scale 20 --degree 5 --gen-type erdos_renyi
+./validate_graph --graph-type u --vertex-type uw --edge-type uw --scale 20 --degree 5 --gen-type er
 
 # load graph from file and run algorithm
 ./bfs_opencl --load-graph ../graphs/mini.el
@@ -675,7 +684,7 @@ cmake --build .
 # Run all tests (from build directory)
 ./triangle_counting_test
 ./breadth_first_search_test
-./validate_graph --edge-type unweighted --scale 8 --degree 8 --gen-type erdos_renyi
+./validate_graph --edge-type uw --scale 8 --degree 8 --gen-type er
 
 # Run load/save tests (cross-platform Python)
 python3 ../test/test_load_save.py
@@ -731,7 +740,7 @@ EdgeLab provides comprehensive testing capabilities for both development and val
 # Run all tests (from build directory)
 ./triangle_counting_test
 ./breadth_first_search_test
-./validate_graph --edge-type unweighted --scale 8 --degree 8 --gen-type erdos_renyi
+./validate_graph --edge-type uw --scale 8 --degree 8 --gen-type er
 
 # Run load/save tests (cross-platform Python)
 python3 ../test/test_load_save.py
@@ -755,7 +764,7 @@ The `validate_graph` program performs comprehensive graph validation:
 
 ```bash
 # Validate a generated graph
-./validate_graph --scale 10 --degree 6 --gen-type erdos_renyi
+./validate_graph --scale 10 --degree 6 --gen-type er
 
 # Validate a loaded graph
 ./validate_graph --load-file graphs/mini.el

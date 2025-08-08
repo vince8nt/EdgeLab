@@ -12,7 +12,7 @@
 #include "../src/generator.h"
 #include "../src/graph_comp.h"
 #include "../src/builder.h"
-#include "../src/loader.h"
+#include "../src/loader/loader_factory_impl.h"
 #include "../src/util.h"
 #include "../examples_threaded/breadth_first_search.h"
 
@@ -42,11 +42,11 @@ struct GraphConfig {
 template<typename Vertex_t, typename Edge_t, GraphType Graph_t>
 Graph<Vertex_t, Edge_t, Graph_t> load_or_generate_graph(const GraphConfig& config) {
     if (config.type == "file") {
-        Loader loader;
+        auto loader = create_loader(config.filepath);
         CLIOptions opts;
         opts.load_file_path = config.filepath;
-        loader.load_graph_header(opts);
-        return loader.LoadGraphBody<Vertex_t, Edge_t, Graph_t>();
+        loader->load_graph_header(opts);
+        return loader->load_graph_body<Vertex_t, Edge_t, Graph_t>();
     } else {
         // Generate graph
         Generator<Vertex_t, Edge_t, Graph_t> generator(
