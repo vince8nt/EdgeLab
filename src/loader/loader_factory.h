@@ -2,30 +2,43 @@
 #define LOADER_FACTORY_H_
 
 #include "loader_base.h"
-#include "edge_list_loader.h"
-#include "metis_graph_loader.h"
-#include "compacted_graph_loader.h"
+#include <memory>
+#include <functional>
+#include <unordered_map>
 
-// Simple factory pattern to create loader based on file type
-std::unique_ptr<LoaderBase> create_loader(const std::string& file_path) {
-    const FileType file_type = GetFileExtension(file_path);
-    switch (file_type) {
-        case FileType::EL:
-            return std::make_unique<EdgeListLoader>(file_type);
-        case FileType::WEL:
-            return std::make_unique<EdgeListLoader>(file_type);
-        case FileType::VEL:
-            return std::make_unique<EdgeListLoader>(file_type);
-        case FileType::VWEL:
-            return std::make_unique<EdgeListLoader>(file_type);
-        case FileType::GRAPH:
-            return std::make_unique<MetisGraphLoader>(file_type);
-        case FileType::CG:
-            return std::make_unique<CompactedGraphLoader>(file_type);
-        default:
-            std::cerr << "Unsupported file type for loader factory: " << file_type << std::endl;
-            exit(1);
+// Forward declarations
+class EdgeListLoader;
+class MetisGraphLoader;
+class CompactedGraphLoader;
+
+// Simple factory with optional extensibility
+class LoaderFactory {
+private:
+    using LoaderCreator = std::function<std::unique_ptr<LoaderBase>(FileType)>;
+    static std::unordered_map<FileType, LoaderCreator>& get_registry() {
+        static std::unordered_map<FileType, LoaderCreator> registry;
+        return registry;
     }
+
+public:
+    // Register a custom loader for a file type
+    static void register_loader(FileType file_type, LoaderCreator creator) {
+        get_registry()[file_type] = creator;
+    }
+
+    // Create loader - uses registered loader if available, otherwise falls back to default
+    static std::unique_ptr<LoaderBase> create_loader(const std::string& file_path);
+    
+    // Template helper for creating specific loader types
+    template<typename LoaderType>
+    static std::unique_ptr<LoaderBase> make_loader(FileType file_type) {
+        return std::make_unique<LoaderType>(file_type);
+    }
+};
+
+// Global function for backward compatibility and ease of use
+inline std::unique_ptr<LoaderBase> create_loader(const std::string& file_path) {
+    return LoaderFactory::create_loader(file_path);
 }
 
 #endif // LOADER_FACTORY_H_

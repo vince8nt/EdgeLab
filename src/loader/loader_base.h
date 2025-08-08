@@ -4,6 +4,10 @@
 #include <fstream>
 #include "../graph.h"
 
+// Forward declarations
+class EdgeListLoader;
+class MetisGraphLoader;
+class CompactedGraphLoader;
 
 class LoaderBase {
 public:
@@ -15,17 +19,9 @@ public:
     // sets opts.graph_type, opts.vertex_type, opts.edge_type
     virtual void load_graph_header(CLIOptions& opts) = 0;
 
-    // load graph body
-    // reads graph body from already opened file
-    // closes file and returns graph
-    // Note: This is implemented by derived classes as template functions
-    // The base class does not provide an implementation since template functions cannot be virtual
-
-    // each call to load_graph_body must be preceded by a distinct call to load_graph_header
-    // load_graph_header is not templated, but load_graph_body is
-    // the CLI options are updated by load_graph_header
-    // the CLI options are thenused (in combinitation with an algorithm's specified graph type)
-        // to dispatch templates to load_graph_body (done by cli_dispatch.h)
+    // Template function that dispatches to the correct derived class
+    template<VertexType Vertex_t, EdgeType Edge_t, GraphType Graph_t>
+    Graph<Vertex_t, Edge_t, Graph_t> load_graph_body();
 
 protected:
     // set by factory based on file extension
@@ -38,7 +34,9 @@ protected:
     GraphType graph_type_;
     CLIVertexType vertex_type_;
     CLIEdgeType edge_type_;
-
 };
+
+// Include the implementation in a separate header
+#include "loader_base_impl.h"
 
 #endif // LOADER_BASE_H_

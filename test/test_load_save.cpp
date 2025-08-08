@@ -1,8 +1,6 @@
 #include "../src/cli_dispatch.h"
 #include "../src/saver.h"
-#include "../src/loader/edge_list_loader.h"
-#include "../src/loader/metis_graph_loader.h"
-#include "../src/loader/compacted_graph_loader.h"
+#include "../src/loader/loader_factory_impl.h"
 
 template<typename Vertex_t, typename Edge_t, GraphType Graph_t>
 void save_load_compare(Graph<Vertex_t, Edge_t, Graph_t> &graph, const std::string& filepath) {
