@@ -1,8 +1,7 @@
-#ifndef TRIANGLE_COUNTING_OPENCL_H
-#define TRIANGLE_COUNTING_OPENCL_H
+#ifndef TRIANGLE_COUNTING_OPENCL_H_
+#define TRIANGLE_COUNTING_OPENCL_H_
 
-#include "../src/cli_dispatch.h"
-#include "../src/opencl_wrapper.h"
+#include "../src/graph_test_opencl.h"
 #include <fstream>
 #include <sstream>
 #include <vector>

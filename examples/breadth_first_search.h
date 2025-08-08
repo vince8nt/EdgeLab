@@ -1,8 +1,7 @@
 #ifndef BREADTH_FIRST_SEARCH_H_
 #define BREADTH_FIRST_SEARCH_H_
 
-#include "graph.h"
-#include "util.h"
+#include "../src/graph_core.h"
 #include <queue>
 
 // BFS algorithm requirements - compile-time constants

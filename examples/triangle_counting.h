@@ -1,7 +1,7 @@
-#ifndef TRIANGLE_COUNTING_H
-#define TRIANGLE_COUNTING_H
+#ifndef TRIANGLE_COUNTING_H_
+#define TRIANGLE_COUNTING_H_
 
-#include "../src/cli_dispatch.h"
+#include "../src/graph_core.h"
 
 // program body for generalized VertexType, EdgeType, and GraphType
 template<typename Vertex_t, typename Edge_t, GraphType Graph_t>
@@ -61,4 +61,4 @@ edge_ID_t triangle_counting(Graph<Vertex_t, Edge_t, Graph_t> &graph) {
     return triangle_count;
 }
 
-#endif // TRIANGLE_COUNTING_H 
+#endif // TRIANGLE_COUNTING_H_ 

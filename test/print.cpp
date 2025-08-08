@@ -1,4 +1,4 @@
-#include "../src/cli_dispatch.h"
+#include "../src/graph_test.h"
 
 template<typename Vertex_t, typename Edge_t, GraphType Graph_t>
 void run_test(Graph<Vertex_t, Edge_t, Graph_t> &graph) {

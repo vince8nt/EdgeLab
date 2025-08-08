@@ -1,4 +1,4 @@
-#include "../src/cli_dispatch.h"
+#include "../src/graph_test.h"
 
 // validate_graph.cpp
 /*

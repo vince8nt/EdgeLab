@@ -1,6 +1,4 @@
 #include "breadth_first_search.h"
-#include "../src/cli_dispatch.h"
-#include "../src/cli.h"
 
 // Functor for dispatching templated function via CLI options
 struct Dispatcher {

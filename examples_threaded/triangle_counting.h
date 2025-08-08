@@ -1,7 +1,8 @@
-#ifndef TRIANGLE_COUNTING_THREADED_H
-#define TRIANGLE_COUNTING_THREADED_H
+#ifndef TRIANGLE_COUNTING_THREADED_H_
+#define TRIANGLE_COUNTING_THREADED_H_
 
-#include "../src/cli_dispatch.h"
+#include "../src/graph_core.h"
+#include "../src/thread_safe.h"
 #include <thread>
 #include <atomic>
 #include <vector>

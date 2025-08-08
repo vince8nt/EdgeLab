@@ -1,5 +1,4 @@
-// #include "../src/generator.h"
-#include "../src/cli_dispatch.h"
+#include "../src/graph_test.h"
 
 // program body for generalized VertexType, EdgeType, and GraphType
 template<typename Vertex_t, typename Edge_t, GraphType Graph_t>

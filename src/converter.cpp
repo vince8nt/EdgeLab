@@ -1,5 +1,5 @@
-#include "../src/cli_dispatch.h"
-#include "../src/saver.h"
+#include "graph_test.h"
+#include "saver.h"
 
 template<typename Vertex_t, typename Edge_t, GraphType Graph_t>
 void save_graph(Graph<Vertex_t, Edge_t, Graph_t> &graph, const std::string& filepath) {

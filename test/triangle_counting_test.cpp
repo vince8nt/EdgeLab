@@ -1,6 +1,4 @@
-#include "../src/cli_dispatch.h"
-#include "../src/generator.h"
-#include "../src/builder.h"
+#include "../src/graph_test.h"
 #include "../examples/triangle_counting.h"
 #include "../examples_threaded/triangle_counting.h"
 #include <iostream>

@@ -1,7 +1,7 @@
-#ifndef GRAPH_PCH_H
-#define GRAPH_PCH_H
+#ifndef GRAPH_TEST_OPENCL_H
+#define GRAPH_TEST_OPENCL_H
 
-// Standard library headers
+// Standard library headers for tests
 #include <cstdint>
 #include <vector>
 #include <iostream>
@@ -20,14 +20,10 @@
 #include <filesystem>
 
 // Graph system headers
-#include "util.h"
-#include "graph_comp.h"
-#include "graph.h"
-#include "generator.h"
-#include "builder.h"
-#include "graph_maker.h"
-#include "saver.h"
-#include "cli.h"
 #include "cli_dispatch.h"
+#include "thread_safe.h"
 
-#endif // GRAPH_PCH_H 
+// OpenCL wrapper (only for OpenCL examples)
+#include "opencl_wrapper.h"
+
+#endif // GRAPH_TEST_OPENCL_H 

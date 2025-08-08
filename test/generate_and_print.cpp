@@ -1,5 +1,4 @@
-#include "../src/generator.h"
-#include "../src/cli.h"
+#include "../src/graph_test.h"
 
 template<typename Vertex_t, typename Edge_t, GraphType Graph_t>
 void run_test(GenType gen_type, int scale, int degree) {

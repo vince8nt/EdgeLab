@@ -1,8 +1,7 @@
-#ifndef BREADTH_FIRST_SEARCH_OPENCL_H
-#define BREADTH_FIRST_SEARCH_OPENCL_H
+#ifndef BREADTH_FIRST_SEARCH_OPENCL_H_
+#define BREADTH_FIRST_SEARCH_OPENCL_H_
 
-#include "../src/cli_dispatch.h"
-#include "../src/opencl_wrapper.h"
+#include "../src/graph_test_opencl.h"
 #include <fstream>
 #include <sstream>
 #include <vector>

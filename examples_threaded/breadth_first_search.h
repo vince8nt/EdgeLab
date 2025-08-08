@@ -1,7 +1,7 @@
-#ifndef BREADTH_FIRST_SEARCH_THREADED_H
-#define BREADTH_FIRST_SEARCH_THREADED_H
+#ifndef BREADTH_FIRST_SEARCH_THREADED_H_
+#define BREADTH_FIRST_SEARCH_THREADED_H_
 
-#include "../src/cli_dispatch.h"
+#include "../src/graph_core.h"
 #include "../src/thread_safe.h"
 #include <queue>
 #include <vector>
@@ -158,4 +158,4 @@ long long breadth_first_search_threaded(Graph<Vertex_t, Edge_t, Graph_t> &graph,
     return -1;
 }
 
-#endif // BREADTH_FIRST_SEARCH_THREADED_H 
+#endif // BREADTH_FIRST_SEARCH_THREADED_H_ 

@@ -1,6 +1,5 @@
-#include "../src/cli_dispatch.h"
+#include "../src/graph_test.h"
 #include "../src/saver.h"
-#include "../src/loader/loader_factory_impl.h"
 
 template<typename Vertex_t, typename Edge_t, GraphType Graph_t>
 void save_load_compare(Graph<Vertex_t, Edge_t, Graph_t> &graph, const std::string& filepath) {
