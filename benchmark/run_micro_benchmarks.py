@@ -224,37 +224,37 @@ def main():
             
             # Small graphs (scale 8)
             runner.run_benchmark("gen_small_sparse", 
-                ["./generate_and_print.exe", "--scale", "8", "--degree", "2", "--gen-type", "erdos_renyi", "--save-file", "/tmp/test_small_sparse.el"])
+                ["./generate_and_print.exe", "--scale", "8", "--degree", "2", "--gen-type", "er", "--save-file", "/tmp/test_small_sparse.el"])
             runner.run_benchmark("gen_small_medium", 
-                ["./generate_and_print.exe", "--scale", "8", "--degree", "4", "--gen-type", "erdos_renyi", "--save-file", "/tmp/test_small_medium.el"])
+                ["./generate_and_print.exe", "--scale", "8", "--degree", "4", "--gen-type", "er", "--save-file", "/tmp/test_small_medium.el"])
             runner.run_benchmark("gen_small_dense", 
-                ["./generate_and_print.exe", "--scale", "8", "--degree", "8", "--gen-type", "erdos_renyi", "--save-file", "/tmp/test_small_dense.el"])
+                ["./generate_and_print.exe", "--scale", "8", "--degree", "8", "--gen-type", "er", "--save-file", "/tmp/test_small_dense.el"])
             
             # Medium graphs (scale 12)
             runner.run_benchmark("gen_medium_sparse", 
-                ["./generate_and_print.exe", "--scale", "12", "--degree", "2", "--gen-type", "erdos_renyi", "--save-file", "/tmp/test_medium_sparse.el"])
+                ["./generate_and_print.exe", "--scale", "12", "--degree", "2", "--gen-type", "er", "--save-file", "/tmp/test_medium_sparse.el"])
             runner.run_benchmark("gen_medium_medium", 
-                ["./generate_and_print.exe", "--scale", "12", "--degree", "4", "--gen-type", "erdos_renyi", "--save-file", "/tmp/test_medium_medium.el"])
+                ["./generate_and_print.exe", "--scale", "12", "--degree", "4", "--gen-type", "er", "--save-file", "/tmp/test_medium_medium.el"])
             runner.run_benchmark("gen_medium_dense", 
-                ["./generate_and_print.exe", "--scale", "12", "--degree", "8", "--gen-type", "erdos_renyi", "--save-file", "/tmp/test_medium_dense.el"])
+                ["./generate_and_print.exe", "--scale", "12", "--degree", "8", "--gen-type", "er", "--save-file", "/tmp/test_medium_dense.el"])
             
             # Large graphs (scale 16)
             runner.run_benchmark("gen_large_sparse", 
-                ["./generate_and_print.exe", "--scale", "16", "--degree", "2", "--gen-type", "erdos_renyi", "--save-file", "/tmp/test_large_sparse.el"])
+                ["./generate_and_print.exe", "--scale", "16", "--degree", "2", "--gen-type", "er", "--save-file", "/tmp/test_large_sparse.el"])
             runner.run_benchmark("gen_large_medium", 
-                ["./generate_and_print.exe", "--scale", "16", "--degree", "4", "--gen-type", "erdos_renyi", "--save-file", "/tmp/test_large_medium.el"])
+                ["./generate_and_print.exe", "--scale", "16", "--degree", "4", "--gen-type", "er", "--save-file", "/tmp/test_large_medium.el"])
             runner.run_benchmark("gen_large_dense", 
-                ["./generate_and_print.exe", "--scale", "16", "--degree", "8", "--gen-type", "erdos_renyi", "--save-file", "/tmp/test_large_dense.el"])
+                ["./generate_and_print.exe", "--scale", "16", "--degree", "8", "--gen-type", "er", "--save-file", "/tmp/test_large_dense.el"])
             
             # High degree tests (scale 16, high degree)
             runner.run_benchmark("gen_high_degree_32", 
-                ["./generate_and_print.exe", "--scale", "16", "--degree", "32", "--gen-type", "erdos_renyi", "--save-file", "/tmp/test_high_degree_32.el"])
+                ["./generate_and_print.exe", "--scale", "16", "--degree", "32", "--gen-type", "er", "--save-file", "/tmp/test_high_degree_32.el"])
             runner.run_benchmark("gen_high_degree_64", 
-                ["./generate_and_print.exe", "--scale", "16", "--degree", "64", "--gen-type", "erdos_renyi", "--save-file", "/tmp/test_high_degree_64.el"])
+                ["./generate_and_print.exe", "--scale", "16", "--degree", "64", "--gen-type", "er", "--save-file", "/tmp/test_high_degree_64.el"])
             runner.run_benchmark("gen_high_degree_128", 
-                ["./generate_and_print.exe", "--scale", "16", "--degree", "128", "--gen-type", "erdos_renyi", "--save-file", "/tmp/test_high_degree_128.el"])
+                ["./generate_and_print.exe", "--scale", "16", "--degree", "128", "--gen-type", "er", "--save-file", "/tmp/test_high_degree_128.el"])
             runner.run_benchmark("gen_high_degree_256", 
-                ["./generate_and_print.exe", "--scale", "16", "--degree", "256", "--gen-type", "erdos_renyi", "--save-file", "/tmp/test_high_degree_256.el"])
+                ["./generate_and_print.exe", "--scale", "16", "--degree", "256", "--gen-type", "er", "--save-file", "/tmp/test_high_degree_256.el"])
             
             # Graph Loading Benchmarks
             log_info("=== Graph Loading Benchmarks ===")
@@ -287,7 +287,7 @@ def main():
             log_info("=== Graph Iteration Benchmarks ===")
             
             # Create a test graph for iteration benchmarks
-            runner.run_command(["./generate_and_print.exe", "--scale", "10", "--degree", "4", "--gen-type", "erdos_renyi", "--save-file", "/tmp/iteration_test.el"], capture_output=False)
+            runner.run_command(["./generate_and_print.exe", "--scale", "10", "--degree", "4", "--gen-type", "er", "--save-file", "/tmp/iteration_test.el"], capture_output=False)
             
             # Test different iteration patterns
             runner.run_benchmark("iteration_forward", ["./iteration.exe", "--load-file", "/tmp/iteration_test.el", "--direction", "forward"])

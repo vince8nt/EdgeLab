@@ -34,34 +34,34 @@ jobs:
     - name: Run iteration
       run: |
         # Check that iteration is equivalent to indexing for all graph type combinations
-        ./build/iteration --graph-type undirected --vertex-type unweighted --edge-type unweighted --scale 8 --degree 8 --gen-type erdos_renyi
-        ./build/iteration --graph-type directed --vertex-type unweighted --edge-type unweighted --scale 8 --degree 8 --gen-type erdos_renyi
-        ./build/iteration --graph-type undirected --vertex-type weighted --edge-type unweighted --scale 8 --degree 8 --gen-type erdos_renyi
-        ./build/iteration --graph-type directed --vertex-type weighted --edge-type unweighted --scale 8 --degree 8 --gen-type erdos_renyi
-        ./build/iteration --graph-type undirected --vertex-type unweighted --edge-type weighted --scale 8 --degree 8 --gen-type erdos_renyi
-        ./build/iteration --graph-type directed --vertex-type unweighted --edge-type weighted --scale 8 --degree 8 --gen-type erdos_renyi
-        ./build/iteration --graph-type undirected --vertex-type weighted --edge-type weighted --scale 8 --degree 8 --gen-type erdos_renyi
-        ./build/iteration --graph-type directed --vertex-type weighted --edge-type weighted --scale 8 --degree 8 --gen-type erdos_renyi
+        ./build/iteration --graph-type u --vertex-type uw --edge-type uw --scale 8 --degree 8 --gen-type er
+        ./build/iteration --graph-type d --vertex-type uw --edge-type uw --scale 8 --degree 8 --gen-type er
+        ./build/iteration --graph-type u --vertex-type w --edge-type uw --scale 8 --degree 8 --gen-type er
+        ./build/iteration --graph-type d --vertex-type w --edge-type uw --scale 8 --degree 8 --gen-type er
+        ./build/iteration --graph-type u --vertex-type uw --edge-type w --scale 8 --degree 8 --gen-type er
+        ./build/iteration --graph-type d --vertex-type uw --edge-type w --scale 8 --degree 8 --gen-type er
+        ./build/iteration --graph-type u --vertex-type w --edge-type w --scale 8 --degree 8 --gen-type er
+        ./build/iteration --graph-type d --vertex-type w --edge-type w --scale 8 --degree 8 --gen-type er
 
     - name: Run validate_graph
       run: |
         # Test Erdős-Rényi graphs
-        ./build/validate_graph --graph-type undirected --edge-type unweighted --scale 8 --degree 8 --gen-type erdos_renyi
-        ./build/validate_graph --graph-type directed --edge-type unweighted --scale 8 --degree 8 --gen-type erdos_renyi
-        ./build/validate_graph --graph-type undirected --edge-type weighted --scale 8 --degree 8 --gen-type erdos_renyi
-        ./build/validate_graph --graph-type directed --edge-type weighted --scale 8 --degree 8 --gen-type erdos_renyi
+        ./build/validate_graph --graph-type u --edge-type uw --scale 8 --degree 8 --gen-type er
+        ./build/validate_graph --graph-type d --edge-type uw --scale 8 --degree 8 --gen-type er
+        ./build/validate_graph --graph-type u --edge-type w --scale 8 --degree 8 --gen-type er
+        ./build/validate_graph --graph-type d --edge-type w --scale 8 --degree 8 --gen-type er
         
         # Test Watts-Strogatz graphs
-        ./build/validate_graph --graph-type undirected --edge-type unweighted --scale 8 --degree 8 --gen-type watts_strogatz
-        ./build/validate_graph --graph-type directed --edge-type unweighted --scale 8 --degree 8 --gen-type watts_strogatz
-        ./build/validate_graph --graph-type undirected --edge-type weighted --scale 8 --degree 8 --gen-type watts_strogatz
-        ./build/validate_graph --graph-type directed --edge-type weighted --scale 8 --degree 8 --gen-type watts_strogatz
+        ./build/validate_graph --graph-type u --edge-type uw --scale 8 --degree 8 --gen-type ws
+        ./build/validate_graph --graph-type d --edge-type uw --scale 8 --degree 8 --gen-type ws
+        ./build/validate_graph --graph-type u --edge-type w --scale 8 --degree 8 --gen-type ws
+        ./build/validate_graph --graph-type d --edge-type w --scale 8 --degree 8 --gen-type ws
         
         # Test Barabási-Albert graphs
-        ./build/validate_graph --graph-type undirected --edge-type unweighted --scale 8 --degree 8 --gen-type barabasi_albert
-        ./build/validate_graph --graph-type directed --edge-type unweighted --scale 8 --degree 8 --gen-type barabasi_albert
-        ./build/validate_graph --graph-type undirected --edge-type weighted --scale 8 --degree 8 --gen-type barabasi_albert
-        ./build/validate_graph --graph-type directed --edge-type weighted --scale 8 --degree 8 --gen-type barabasi_albert
+        ./build/validate_graph --graph-type u --edge-type uw --scale 8 --degree 8 --gen-type ba
+        ./build/validate_graph --graph-type d --edge-type uw --scale 8 --degree 8 --gen-type ba
+        ./build/validate_graph --graph-type u --edge-type w --scale 8 --degree 8 --gen-type ba
+        ./build/validate_graph --graph-type d --edge-type w --scale 8 --degree 8 --gen-type ba
 
     - name: Run dense packing check
       run: |

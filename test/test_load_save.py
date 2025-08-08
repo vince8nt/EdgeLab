@@ -59,9 +59,9 @@ def main():
     temp_dir.mkdir(parents=True, exist_ok=True)
     
     # Define test configurations
-    graph_types = ["undirected", "directed"]
-    vertex_types = ["unweighted", "weighted", "unweighted", "weighted"]
-    edge_types = ["unweighted", "unweighted", "weighted", "weighted"]
+    graph_types = ["u", "d"]
+    vertex_types = ["uw", "w", "uw", "w"]
+    edge_types = ["uw", "uw", "w", "w"]
     el_files = ["temp.el", "temp.vel", "temp.wel", "temp.vwel"]
     cg_file = "temp.cg"
     
@@ -89,7 +89,7 @@ def main():
                     "--edge-type", edge_type,
                     "--scale", "8",
                     "--degree", "8",
-                    "--gen-type", "erdos_renyi",
+                    "--gen-type", "er",
                     "--save-file", str(el_path)
                 ]
                 
@@ -119,7 +119,7 @@ def main():
                     "--edge-type", edge_type,
                     "--scale", "8",
                     "--degree", "8",
-                    "--gen-type", "erdos_renyi",
+                    "--gen-type", "er",
                     "--save-file", str(cg_path)
                 ]
                 
