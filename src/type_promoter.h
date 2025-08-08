@@ -15,14 +15,17 @@ public:
         promoted_opts.graph_type = promote_graph_type(opts.graph_type, AlgorithmReqsType::graph_type);
         
         // Promote vertex and edge types
-        promoted_opts.vertex_type = promote_vertex_type(opts.vertex_type, AlgorithmReqsType::vertex_type);
-        promoted_opts.edge_type = promote_edge_type(opts.edge_type, AlgorithmReqsType::edge_type);
+        // add data if algorithm specifies it
+        // make vertices/edges unweighted if weights would go unused (auto_uw_promotion)
+            // set auto_uw_promotion to false to disable this
+        promoted_opts.vertex_type = promote_vertex_type(opts, AlgorithmReqsType::vertex_type);
+        promoted_opts.edge_type = promote_edge_type(opts, AlgorithmReqsType::edge_type);
         
         return promoted_opts;
     }
 
 private:
-    // Promote graph type based on requirements
+    // Promote graph type
     static GraphType promote_graph_type(GraphType current, GraphType required) {
         // Undirected -> Undirected
         if (current == GraphType::UNDIRECTED) {
@@ -44,50 +47,61 @@ private:
     }
     
     // Promote vertex type
-    static CLIVertexType promote_vertex_type(CLIVertexType current, CLIVertexType required) {
-        // NonData vertices
-        if (required == CLIVertexType::UNWEIGHTED) {
-            return CLIVertexType::UNWEIGHTED;
-        }
-        if (required == CLIVertexType::WEIGHTED) {
-            if (current == CLIVertexType::WEIGHTED) {
+    static CLIVertexType promote_vertex_type(const CLIOptions &opts, CLIVertexType required) {
+        CLIVertexType current = opts.vertex_type;
+        bool auto_uw_promotion = opts.auto_uw_promotion;
+        if (required == CLIVertexType::UNWEIGHTED or required == CLIVertexType::WEIGHTED) {
+            // non-data vertices
+            if (!auto_uw_promotion) {
+                return current;
+            }
+            if (required == CLIVertexType::WEIGHTED and current == CLIVertexType::WEIGHTED) {
                 return CLIVertexType::WEIGHTED;
             }
             return CLIVertexType::UNWEIGHTED;
         }
-
-        // Data vertices
-        if (required == CLIVertexType::UNWEIGHTED_DATA) {
+        else {
+            // data vertices
+            if (!auto_uw_promotion) {
+                if (current == CLIVertexType::WEIGHTED)
+                    return CLIVertexType::WEIGHTED_DATA;
+                return CLIVertexType::UNWEIGHTED_DATA;
+            }
+            if (required == CLIVertexType::WEIGHTED_DATA and current == CLIVertexType::WEIGHTED) {
+                return CLIVertexType::WEIGHTED_DATA;
+            }
             return CLIVertexType::UNWEIGHTED_DATA;
         }
-        if (current == CLIVertexType::WEIGHTED) {
-            return CLIVertexType::WEIGHTED_DATA;
-        }
-        return CLIVertexType::UNWEIGHTED_DATA;
     }
 
     // Promote edge type
-    static CLIEdgeType promote_edge_type(CLIEdgeType current, CLIEdgeType required) {
-        // NonData edges
-        if (required == CLIEdgeType::UNWEIGHTED) {
-            return CLIEdgeType::UNWEIGHTED;
-        }
-        if (required == CLIEdgeType::WEIGHTED) {
-            if (current == CLIEdgeType::WEIGHTED) {
+    static CLIEdgeType promote_edge_type(const CLIOptions &opts, CLIEdgeType required) {
+        CLIEdgeType current = opts.edge_type;
+        bool auto_uw_promotion = opts.auto_uw_promotion;
+        if (required == CLIEdgeType::UNWEIGHTED or required == CLIEdgeType::WEIGHTED) {
+            // non-data edges
+            if (!auto_uw_promotion) {
+                return current;
+            }
+            if (required == CLIEdgeType::WEIGHTED and current == CLIEdgeType::WEIGHTED) {
                 return CLIEdgeType::WEIGHTED;
             }
             return CLIEdgeType::UNWEIGHTED;
         }
-
-        // Data edges
-        if (required == CLIEdgeType::UNWEIGHTED_DATA) {
+        else {
+            // data edges
+            if (!auto_uw_promotion) {
+                if (current == CLIEdgeType::WEIGHTED)
+                    return CLIEdgeType::WEIGHTED_DATA;
+                return CLIEdgeType::UNWEIGHTED_DATA;
+            }
+            if (required == CLIEdgeType::WEIGHTED_DATA and current == CLIEdgeType::WEIGHTED) {
+                return CLIEdgeType::WEIGHTED_DATA;
+            }
             return CLIEdgeType::UNWEIGHTED_DATA;
         }
-        if (current == CLIEdgeType::WEIGHTED) {
-            return CLIEdgeType::WEIGHTED_DATA;
-        }
-        return CLIEdgeType::UNWEIGHTED_DATA;
     }
+
 };
 
 #endif // TYPE_PROMOTER_H_ 

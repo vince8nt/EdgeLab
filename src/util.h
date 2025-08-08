@@ -119,6 +119,8 @@ struct CLIOptions {
     GenType gen_type;
     std::string load_file_path; // Path to load file, mutually exclusive
     std::string save_file_path; // Path to save file (optional)
+    bool auto_uw_promotion = true; // Automatically promote weighted to unweighted
+                                   // in the case weight is not needed
 };
 
 // AlgorithmReqs is now a compile-time constant struct that algorithms define

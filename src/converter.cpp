@@ -23,6 +23,7 @@ int main(int argc, char** argv) {
         std::cerr << "Error: No output file path provided" << std::endl;
         exit(1);
     }
+    opts.auto_uw_promotion = false;
     dispatch_cli(opts, Dispatcher{opts.save_file_path});
     return 0;
 }
