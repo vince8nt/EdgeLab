@@ -55,14 +55,14 @@ public:
                 save_VWEL(graph, file);
                 break;
             case FileType::GRAPH:
-                std::cerr << "GRAPH format saving not implemented yet" << std::endl;
-                exit(1);
+                save_GRAPH(graph, file);
+                break;
             case FileType::CG:
                 save_CG(graph, file);
                 break;
             default:
                 std::cerr << "Unsupported file type: " << file_type << std::endl;
-                exit(1);
+                break;
         }
 
         file.close();
@@ -208,6 +208,31 @@ private:
                     file << u << " " << v << " " << w << std::endl;
                 }
             }
+        }
+    }
+
+    // Save Graph format (both weighted/unweighted, directed only)
+    void save_GRAPH(const Graph<Vertex_t, Edge_t, Graph_t>& graph, std::ofstream& file) {
+        file << graph.num_vertices() << " " << graph.num_edges() << " ";
+        file << (WeightedVertexType<Vertex_t> ? "1" : "0");
+        file << (WeightedEdgeType<Edge_t> ? "1" : "0") << std::endl;
+        for (vertex_ID_t v = 0; v < graph.num_vertices(); v++) {
+            bool first = true;
+            if constexpr (WeightedVertexType<Vertex_t>) {
+                file << graph[v].weight();
+                first = false;
+            }
+            for (const auto& edge : graph[v]) {
+                if (first)
+                    first = false;
+                else
+                    file << " ";
+                if constexpr (WeightedEdgeType<Edge_t>) {
+                    file << edge.weight() << " ";
+                }
+                file << edge.dest() + 1;
+            }
+            file << std::endl;
         }
     }
 
