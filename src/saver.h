@@ -90,7 +90,7 @@ private:
             
             case FileType::GRAPH:
                 // GRAPH: both weighted/unweighted, directed only
-                return Graph_t == GraphType::DIRECTED;
+                return true;
             
             case FileType::CG:
                 // CG: supports all types

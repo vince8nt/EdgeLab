@@ -19,6 +19,39 @@ import shutil
 from pathlib import Path
 
 
+def run_test(executable_path, graph_type, vertex_type, edge_type, save_path, format_name):
+    """
+    Run a single test with the given parameters.
+    
+    Returns:
+        bool: True if test passed, False otherwise
+    """
+    cmd = [
+        str(executable_path),
+        "--graph-type", graph_type,
+        "--vertex-type", vertex_type,
+        "--edge-type", edge_type,
+        "--scale", "8",
+        "--degree", "8",
+        "--gen-type", "er",
+        "--save-file", str(save_path)
+    ]
+    
+    print(f"  Running: {' '.join(cmd)}")
+    
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode == 0:
+        print(f"  {format_name} format passed")
+        return True
+    else:
+        print(f"  {format_name} format failed with exit code {result.returncode}")
+        if result.stdout:
+            print(f"  stdout: {result.stdout}")
+        if result.stderr:
+            print(f"  stderr: {result.stderr}")
+        sys.exit(1)
+
+
 def main():
     # Get script directory and project root
     script_dir = Path(__file__).parent.absolute()
@@ -64,8 +97,9 @@ def main():
     edge_types = ["uw", "uw", "w", "w"]
     el_files = ["temp.el", "temp.vel", "temp.wel", "temp.vwel"]
     cg_file = "temp.cg"
+    graph_file = "temp.graph"
     
-    # Counter for tests (each configuration runs 2 tests: EL and CG)
+    # Counter for tests (each configuration runs 3 tests: EL, CG, and GRAPH)
     test_count = 0
     passed_count = 0
     
@@ -81,61 +115,22 @@ def main():
                 test_count += 1
                 print("  Testing EL format...")
                 el_path = temp_dir / el_file
-                
-                cmd = [
-                    str(executable_path),
-                    "--graph-type", graph_type,
-                    "--vertex-type", vertex_type,
-                    "--edge-type", edge_type,
-                    "--scale", "8",
-                    "--degree", "8",
-                    "--gen-type", "er",
-                    "--save-file", str(el_path)
-                ]
-                
-                print(f"  Running: {' '.join(cmd)}")
-                
-                result = subprocess.run(cmd, capture_output=True, text=True)
-                if result.returncode == 0:
-                    print("  EL format passed")
+                if run_test(executable_path, graph_type, vertex_type, edge_type, el_path, "EL"):
                     passed_count += 1
-                else:
-                    print(f"  EL format failed with exit code {result.returncode}")
-                    if result.stdout:
-                        print(f"  stdout: {result.stdout}")
-                    if result.stderr:
-                        print(f"  stderr: {result.stderr}")
-                    sys.exit(1)
                 
                 # Test with CG format
                 test_count += 1
                 print("  Testing CG format...")
                 cg_path = temp_dir / cg_file
-                
-                cmd = [
-                    str(executable_path),
-                    "--graph-type", graph_type,
-                    "--vertex-type", vertex_type,
-                    "--edge-type", edge_type,
-                    "--scale", "8",
-                    "--degree", "8",
-                    "--gen-type", "er",
-                    "--save-file", str(cg_path)
-                ]
-                
-                print(f"  Running: {' '.join(cmd)}")
-                
-                result = subprocess.run(cmd, capture_output=True, text=True)
-                if result.returncode == 0:
-                    print("  CG format passed")
+                if run_test(executable_path, graph_type, vertex_type, edge_type, cg_path, "CG"):
                     passed_count += 1
-                else:
-                    print(f"  CG format failed with exit code {result.returncode}")
-                    if result.stdout:
-                        print(f"  stdout: {result.stdout}")
-                    if result.stderr:
-                        print(f"  stderr: {result.stderr}")
-                    sys.exit(1)
+                
+                # Test with GRAPH format
+                test_count += 1
+                print("  Testing GRAPH format...")
+                graph_path = temp_dir / graph_file
+                if run_test(executable_path, graph_type, vertex_type, edge_type, graph_path, "GRAPH"):
+                    passed_count += 1
                 
                 print()
     

@@ -25,7 +25,6 @@ public:
         std::getline(file_, line);
         std::istringstream iss(line);
         std::string num_vertices, num_edges, flags;
-        file_.seekg(0, std::ios::beg);
         if (!(iss >> num_vertices >> num_edges)) {
             std::cerr << "Invalid graph header: " << line << std::endl;
             exit(1);
@@ -45,7 +44,6 @@ public:
     }
 
     // Read GRAPH format
-    // implement later
     template <VertexType Vertex_t, EdgeType Edge_t, GraphType Graph_t>
     Graph<Vertex_t, Edge_t, Graph_t> load_graph_body() {
         using Vertex = CSR_Vertex<Vertex_t, Edge_t, Graph_t>;
@@ -87,9 +85,9 @@ public:
                 vertex_ID_t dest;
                 while (iss >> dest) {
                     if constexpr (DataEdgeType<Edge_t>) {
-                        new (&(++edges_current)[0]) Edge_t(dest-1, typename Edge_t::data_type{});
+                        new (&(edges_current++)[0]) Edge_t(dest-1, typename Edge_t::data_type{});
                     } else {
-                        new (&(++edges_current)[0]) Edge_t(dest-1);
+                        new (&(edges_current++)[0]) Edge_t(dest-1);
                     }
                 }
             }
