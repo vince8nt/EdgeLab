@@ -48,9 +48,64 @@ public:
     // implement later
     template <VertexType Vertex_t, EdgeType Edge_t, GraphType Graph_t>
     Graph<Vertex_t, Edge_t, Graph_t> load_graph_body() {
-        Builder<Vertex_t, Edge_t, Graph_t> builder;
-        VectorGraph<Vertex_t, Edge_t> vg;
-        return builder.BuildGraph(vg);
+        using Vertex = CSR_Vertex<Vertex_t, Edge_t, Graph_t>;
+        // permenant graph memory allocation
+        size_t vertices_size = (num_vertices_ + 1) * sizeof(Vertex);
+        size_t edges_size = num_edges_ * sizeof(Edge_t);
+        Vertex* vertices = (Vertex*)malloc(vertices_size);
+        Edge_t* edges = (Edge_t*)malloc(edges_size);
+
+        Edge_t* edges_current = edges;
+        std::string line;
+        for (vertex_ID_t i = 0; i < num_vertices_; i++) {
+            std::getline(file_, line);
+            std::istringstream iss(line);
+            if constexpr (WeightedVertexType<Vertex_t>) {
+                weight_t weight;
+                iss >> weight;
+                new (&vertices[i]) Vertex(weight, edges_current);
+            }
+            else {
+                if constexpr (DataVertexType<Vertex_t>) {
+                    new (&vertices[i]) Vertex(Vertex_t(typename Vertex_t::data_type{}), edges_current);
+                } else {
+                    new (&vertices[i]) Vertex(edges_current);
+                }
+            }
+            if constexpr (WeightedEdgeType<Edge_t>) {
+                weight_t weight;
+                vertex_ID_t dest;
+                while (iss >> weight >> dest) {
+                    if constexpr (DataEdgeType<Edge_t>) {
+                        new (&(edges_current++)[0]) Edge_t(dest-1, weight, typename Edge_t::data_type{});
+                    } else {
+                        new (&(edges_current++)[0]) Edge_t(dest-1, weight);
+                    }
+                }
+            }
+            else {
+                vertex_ID_t dest;
+                while (iss >> dest) {
+                    if constexpr (DataEdgeType<Edge_t>) {
+                        new (&(++edges_current)[0]) Edge_t(dest-1, typename Edge_t::data_type{});
+                    } else {
+                        new (&(++edges_current)[0]) Edge_t(dest-1);
+                    }
+                }
+            }
+        }
+        if constexpr (DataVertexType<Vertex_t>) {
+            new (&vertices[num_vertices_]) Vertex(Vertex_t(typename Vertex_t::data_type{}), edges_current);
+        } else {
+            if constexpr (WeightedVertexType<Vertex_t>) {
+                new (&vertices[num_vertices_]) Vertex(0, edges_current);
+            } else {
+                new (&vertices[num_vertices_]) Vertex(edges_current);
+            }
+        }
+
+        file_.close();
+        return Graph<Vertex_t, Edge_t, Graph_t>(num_vertices_, vertices, num_edges_, edges);
     }
 
 private:
