@@ -132,33 +132,32 @@ public:
     };
 
 
-    // constructors / destructor
-    Graph(vertex_ID_t num_vertices, Vertex* vertices, edge_ID_t num_edges, Edge_t* edges)
+        // constructors / destructor
+        Graph(vertex_ID_t num_vertices, Vertex* vertices,
+            edge_ID_t num_edges, Edge_t* edges)
             requires (Graph_t != GraphType::BIDIRECTED) :
-            num_vertices_(num_vertices), vertices_(vertices),
-            num_edges_(num_edges), edges_(edges), edges_in_(nullptr) {
+            num_vertices_(num_vertices), vertices_(std::unique_ptr<Vertex, FreeDeleter>(vertices, FreeDeleter())),
+            num_edges_(num_edges), edges_(std::unique_ptr<Edge_t, FreeDeleter>(edges, FreeDeleter())) {
     }
-    Graph(vertex_ID_t num_vertices, Vertex* vertices, edge_ID_t num_edges, Edge_t* edges, Edge_t* edges_in)
+    Graph(vertex_ID_t num_vertices, Vertex* vertices,
+            edge_ID_t num_edges, Edge_t* edges,
+            Edge_t* edges_in)
             requires (Graph_t == GraphType::BIDIRECTED) :
-            num_vertices_(num_vertices), vertices_(vertices),
-            num_edges_(num_edges), edges_(edges), edges_in_(edges_in) {
+            num_vertices_(num_vertices), vertices_(std::unique_ptr<Vertex, FreeDeleter>(vertices, FreeDeleter())),
+            num_edges_(num_edges), edges_(std::unique_ptr<Edge_t, FreeDeleter>(edges, FreeDeleter())),
+            edges_in_(std::unique_ptr<Edge_t, FreeDeleter>(edges_in, FreeDeleter())) {
     }
     Graph(const Graph&) = delete;
     Graph(Graph&& other) noexcept :
         num_vertices_(other.num_vertices_),
-        vertices_(other.vertices_),
+        vertices_(std::move(other.vertices_)),
         num_edges_(other.num_edges_),
-        edges_(other.edges_),
-        edges_in_(other.edges_in_) {
+        edges_(std::move(other.edges_)),
+        edges_in_(std::move(other.edges_in_)) {
     }
     Graph& operator=(const Graph&) = delete;
     Graph& operator=(Graph&&) noexcept = delete;
-    ~Graph() {
-        if constexpr (Graph_t == GraphType::BIDIRECTED)
-            free(const_cast<Edge_t*>(edges_in_));
-        free(const_cast<Edge_t*>(edges_));
-        free(const_cast<Vertex*>(vertices_));
-    }
+    ~Graph() = default;
 
 
     // getters
@@ -174,14 +173,14 @@ public:
 
     // indexing suport for vertices
     vertex_ID_t num_vertices() const { return num_vertices_; }
-    const VertexRef operator[](vertex_ID_t i) const { return VertexRef(vertices_ + i); }
+    const VertexRef operator[](vertex_ID_t i) const { return VertexRef(vertices_.get() + i); }
 
     // Iterator support for vertices
-    const VertexRef begin() const { return VertexRef(vertices_); }
-    const VertexRef end() const { return VertexRef(vertices_ + num_vertices_); }
+    const VertexRef begin() const { return VertexRef(vertices_.get()); }
+    const VertexRef end() const { return VertexRef(vertices_.get() + num_vertices_); }
 
     // get Vertex ID (kinda annoying that it needs to be called from graph)
-    vertex_ID_t ID(const VertexRef vr) { return vr.csr_loc_ - vertices_; }
+    vertex_ID_t ID(const VertexRef vr) { return vr.csr_loc_ - vertices_.get(); }
 
     // printing functionality (for testing/debugging)
     friend std::ostream& operator<<(std::ostream& os, const Graph<Vertex_t, Edge_t, Graph_t>& g) {
@@ -202,11 +201,17 @@ public:
     }
 
 private:
+    struct FreeDeleter {
+        void operator()(void* ptr) const {
+            free(ptr);
+        }
+    };
+
     const vertex_ID_t num_vertices_;
-    const Vertex* vertices_;
+    std::unique_ptr<Vertex, FreeDeleter> vertices_;
     const edge_ID_t num_edges_;
-    const Edge_t* const edges_;
-    const Edge_t* const edges_in_;
+    std::unique_ptr<Edge_t, FreeDeleter> edges_;
+    std::unique_ptr<Edge_t, FreeDeleter> edges_in_;
 };
 
 #endif // GRAPH_H_
