@@ -61,6 +61,7 @@ inline bool parse_enum(const std::string& value, GenType& out) {
     if (v == "er")       { out = GenType::ERDOS_RENYI;       return true; }
     if (v == "ws")    { out = GenType::WATTS_STROGATZ;    return true; }
     if (v == "ba")   { out = GenType::BARABASI_ALBERT;   return true; }
+    if (v == "kr")   { out = GenType::KRONECKER;         return true; }
     return false;
 }
 

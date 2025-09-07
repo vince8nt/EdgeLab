@@ -36,6 +36,9 @@ public:
             case GenType::BARABASI_ALBERT:
                 vg = GenerateBarabasiAlbert();
                 break;
+            case GenType::KRONECKER:
+                vg = GenerateKronecker();
+                break;
             default:
                 std::cout << "Defaulting to Erdos-Renyi" << std::endl;
                 vg = GenerateErdosRenyi();
@@ -388,6 +391,95 @@ private:
                     
                     // Remove the selected vertex from degree_sequence to avoid duplicates
                     degree_sequence.erase(degree_sequence.begin() + selected_index);
+                }
+            }
+        }
+        
+        GenerateVertexWeights(vg, gen, weight_dist);
+        return vg;
+    }
+
+    VectorGraph<Vertex_t, Edge_t> GenerateKronecker() {
+        std::mt19937 gen;
+        gen.seed(seed_);
+        std::uniform_int_distribution<weight_t> weight_dist(1, 256);
+        
+        VectorGraph<Vertex_t, Edge_t> vg(num_vertices_);
+        auto &matrix = vg.matrix;
+        
+        // Kronecker graph parameters
+        // We use a 2x2 initiator matrix with probabilities
+        // [a, b; c, d] where a, b, c, d are probabilities
+        const float a = 0.57f;  // probability for (0,0) -> (0,0)
+        const float b = 0.19f;  // probability for (0,0) -> (0,1)
+        const float c = 0.19f;  // probability for (0,0) -> (1,0)
+        // const float d = 0.05f;  // probability for (0,0) -> (1,1)
+        
+        std::uniform_real_distribution<float> prob_dist(0.0f, 1.0f);
+        
+        // Generate edges using Kronecker product approach
+        for (size_t i = 0; i < num_vertices_ * degree_; i++) {
+            vertex_ID_t src = 0;
+            vertex_ID_t dest = 0;
+            for (int bit = 0; bit < scale_; bit++) {
+                src <<= 1, dest <<= 1;
+                float prob = prob_dist(gen);
+                if (prob < a) {
+                    src |= 1, dest |= 1;
+                } else if (prob < a + b) {
+                    src |= 1, dest |= 0;
+                } else if (prob < a + b + c) {
+                    src |= 0, dest |= 1;
+                } else {
+                    src |= 0, dest |= 0;
+                }
+            }
+            if constexpr (Graph_t == GraphType::UNDIRECTED) {
+                if (src < dest) {
+                    if constexpr (WeightedEdgeType<Edge_t>) {
+                        weight_t weight = weight_dist(gen);
+                        if constexpr (DataEdgeType<Edge_t>) {
+                            matrix[src].push_back(Edge_t(dest, weight, typename Edge_t::data_type{}));
+                        } else {
+                            matrix[src].push_back({dest, weight});
+                        }
+                    } else {
+                        if constexpr (DataEdgeType<Edge_t>) {
+                            matrix[src].push_back(Edge_t(dest, typename Edge_t::data_type{}));
+                        } else {
+                            matrix[src].push_back({dest});
+                        }
+                    }
+                } else if (src > dest) {
+                    if constexpr (WeightedEdgeType<Edge_t>) {
+                        weight_t weight = weight_dist(gen);
+                        if constexpr (DataEdgeType<Edge_t>) {
+                            matrix[dest].push_back(Edge_t(src, weight, typename Edge_t::data_type{}));
+                        } else {
+                            matrix[dest].push_back({src, weight});
+                        }
+                    } else {
+                        if constexpr (DataEdgeType<Edge_t>) {
+                            matrix[dest].push_back(Edge_t(src, typename Edge_t::data_type{}));
+                        } else {
+                            matrix[dest].push_back({src});
+                        }
+                    }
+                }
+            } else {
+                if constexpr (WeightedEdgeType<Edge_t>) {
+                    weight_t weight = weight_dist(gen);
+                    if constexpr (DataEdgeType<Edge_t>) {
+                        matrix[src].push_back(Edge_t(dest, weight, typename Edge_t::data_type{}));
+                    } else {
+                        matrix[src].push_back({dest, weight});
+                    }
+                } else {
+                    if constexpr (DataEdgeType<Edge_t>) {
+                        matrix[dest].push_back(Edge_t(src, typename Edge_t::data_type{}));
+                    } else {
+                        matrix[dest].push_back({src});
+                    }
                 }
             }
         }

@@ -75,6 +75,7 @@ enum class GenType {
     ERDOS_RENYI,     // Erdos-Renyi-Gilbert
     WATTS_STROGATZ,  // Watts-Strogatz
     BARABASI_ALBERT, // Barabasi-Albert
+    KRONECKER,       // Kronecker
 };
 
 inline std::ostream& operator<<(std::ostream& os, GenType Gen_t) {
@@ -87,6 +88,9 @@ inline std::ostream& operator<<(std::ostream& os, GenType Gen_t) {
             break;
         case GenType::BARABASI_ALBERT:
             os << "Barabasi-Albert";
+            break;
+        case GenType::KRONECKER:
+            os << "Kronecker";
             break;
         default:
             os << "Unknown Generation Type";
