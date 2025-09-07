@@ -413,7 +413,7 @@ private:
         const float a = 0.57f;  // probability for (0,0) -> (0,0)
         const float b = 0.19f;  // probability for (0,0) -> (0,1)
         const float c = 0.19f;  // probability for (0,0) -> (1,0)
-        const float d = 0.05f;  // probability for (0,0) -> (1,1)
+        // const float d = 0.05f;  // probability for (0,0) -> (1,1)
         
         std::uniform_real_distribution<float> prob_dist(0.0f, 1.0f);
         
