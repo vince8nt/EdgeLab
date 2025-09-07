@@ -178,6 +178,7 @@ int main(int argc, char* argv[]) {
         if (gen_type_str == "erdos_renyi") gen_type = GenType::ERDOS_RENYI;
         else if (gen_type_str == "watts_strogatz") gen_type = GenType::WATTS_STROGATZ;
         else if (gen_type_str == "barabasi_albert") gen_type = GenType::BARABASI_ALBERT;
+        else if (gen_type_str == "kronecker") gen_type = GenType::KRONECKER;
         else {
             cout << "Unknown generation type: " << gen_type_str << endl;
             return 1;
